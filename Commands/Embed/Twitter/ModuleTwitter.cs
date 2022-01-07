@@ -168,12 +168,65 @@ namespace DiscordBot.Commands.Embed.Twitter
                 var timeline = await client.Timelines.GetUserTimelineAsync(new GetUserTimelineParameters(strUser)
                 {
                     IncludeEntities = true,
-                    PageSize = 50,
+                    PageSize = 5,
                     IncludeRetweets = true,
 
                 }); 
 
-                message = timeline.First().FullText;
+                try
+                {
+                    if (timeline.First().Media.First().Id != null)
+                    {
+                        var thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
+                        {
+                            Height = 48,
+                            Width = 48,
+                            Url = user.User.ProfileImageUrl
+                        };
+
+                        var embed = new DiscordEmbedBuilder()
+                        {
+                            Title = strUser,
+                            Description = timeline.First().Text,
+                            Thumbnail = thumbnail,
+                            ImageUrl = timeline.First().Media.First().MediaURL,
+                            Url = $"https://www.twitter.com/{strUser}"
+                        };
+
+                        var msg = await new DiscordMessageBuilder()
+                            .WithEmbed(embed)
+                            .WithReply(ctx.Member.Id, true)
+                            .SendAsync(ctx.Channel);
+                    }
+                    else
+                    {
+                        var thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
+                        {
+                            Height = 48,
+                            Width = 48,
+                            Url = user.User.ProfileImageUrl
+                        };
+
+                        var embed = new DiscordEmbedBuilder()
+                        {
+                            Title = strUser,
+                            Description = timeline.First().Text,
+                            Thumbnail = thumbnail,
+                            Url = $"https://www.twitter.com/{strUser}"
+                        };
+
+                        var msg = await new DiscordMessageBuilder()
+                            .WithEmbed(embed)
+                            .WithReply(ctx.Member.Id, true)
+                            .SendAsync(ctx.Channel);
+                    }
+
+                    //await ctx.RespondAsync(message);
+                }
+                catch (Exception ex)
+                {
+                    await ctx.RespondAsync(ex.Message);
+                }
             }
             catch (Tweetinvi.Exceptions.TwitterException ex)
             {
@@ -181,40 +234,6 @@ namespace DiscordBot.Commands.Embed.Twitter
             }
             
 
-            try
-            {
-                // for (int i = 0; i < 5; i++)
-                // {
-                //     message += user.Includes.Tweets.ToString();
-                // }
-                // var tweet = user.Includes.Tweets.ElementAt(1).Text;
-
-                // var thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
-                // {
-                //     Height = 48,
-                //     Width = 48,
-                //     Url = user.User.ProfileImageUrl
-                // };
-
-                // var embed = new DiscordEmbedBuilder()
-                // {
-                //     Title = strUser,
-                //     Description = tweet,
-                //     Thumbnail = thumbnail,
-                //     Url = $"https://www.twitter.com/{strUser}"
-                // };
-
-                // var msg = await new DiscordMessageBuilder()
-                //     .WithEmbed(embed)
-                //     .WithReply(ctx.Member.Id, true)
-                //     .SendAsync(ctx.Channel);
-
-                await ctx.RespondAsync(message);
-            }
-            catch (Tweetinvi.Exceptions.TwitterException ex)
-            {
-                await ctx.RespondAsync("ex.Message");
-            }
 
 
         }
