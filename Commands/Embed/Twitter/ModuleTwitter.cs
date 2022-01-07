@@ -175,7 +175,7 @@ namespace DiscordBot.Commands.Embed.Twitter
 
                 try
                 {
-                    if (timeline.First().Media != null)
+                    if (timeline.FirstOrDefault().Media != null)
                     {
                         var thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
                         {
