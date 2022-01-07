@@ -225,7 +225,7 @@ namespace DiscordBot.Commands.Embed.Twitter
                 }
                 catch (Exception ex)
                 {
-                    await ctx.RespondAsync(ex.Message);
+                    await ctx.RespondAsync(ex.Message + ex.StackTrace);
                 }
             }
             catch (Tweetinvi.Exceptions.TwitterException ex)
