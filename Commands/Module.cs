@@ -41,9 +41,9 @@ namespace DiscordBot.Commands
             {
                 image.Mutate( x => x.Resize(512, 512) );
 
-                using (var userUrl = new System.Net.WebClient())
+                using (var userUrl = new HttpClient())
                 {
-                    using (Stream stream = userUrl.OpenRead(member.GetAvatarUrl(DSharpPlus.ImageFormat.Png, 64)))
+                    using (Stream stream = await userUrl.GetStreamAsync(member.GetAvatarUrl(DSharpPlus.ImageFormat.Png, 64)))
                     {
                         var avatar = Image.Load(stream);
 
