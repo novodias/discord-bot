@@ -175,7 +175,7 @@ namespace DiscordBot.Commands.Embed.Twitter
 
                 try
                 {
-                    if (timeline.First().Media.First().Id != null)
+                    if (timeline.First().Media != null)
                     {
                         var thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
                         {
@@ -189,6 +189,7 @@ namespace DiscordBot.Commands.Embed.Twitter
                             Title = strUser,
                             Description = timeline.First().Text,
                             Thumbnail = thumbnail,
+                            Color = DiscordColor.Blue,
                             ImageUrl = timeline.First().Media.First().MediaURL,
                             Url = $"https://www.twitter.com/{strUser}"
                         };
@@ -212,6 +213,7 @@ namespace DiscordBot.Commands.Embed.Twitter
                             Title = strUser,
                             Description = timeline.First().Text,
                             Thumbnail = thumbnail,
+                            Color = DiscordColor.Blue,
                             Url = $"https://www.twitter.com/{strUser}"
                         };
 
