@@ -54,14 +54,26 @@ namespace DiscordBot.Commands
                         var fontf = SixLabors.Fonts.SystemFonts.Find("ubuntu");
                         var font = new SixLabors.Fonts.Font(fontf, 32f, SixLabors.Fonts.FontStyle.Bold);
 
-                        image.Mutate( x => x.DrawImage( avatar, new Point(228, 164), 1f ) );
+                        image.Mutate( x => x.DrawImage( avatar, new Point(240, 164), 1f ) );
                         avatar.Dispose();
 
+                        var options = new DrawingOptions() 
+                        {
+                            TextOptions = new TextOptions()
+                            {
+                                VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Bottom,
+                                WrapTextWidth = image.Width,
+                                HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center,
+                            }
+
+                        };
+
                         image.Mutate( y => y.DrawText(
+                            options,
                             String.Format("{0} é sus", member.DisplayName).ToUpper(), 
                             font, 
                             Color.White, 
-                            new PointF(128f, 384f) ));
+                            new PointF(0, 384f) ));
 
                     }
                 } 
@@ -72,23 +84,27 @@ namespace DiscordBot.Commands
                 */
                 // image.Save("files/images/meme/amogusUser.png");
 
-                Stream imageStream = new MemoryStream();
-                image.SaveAsPng(imageStream);
-                imageStream.Position = 0;
+                using (Stream imageStream = new MemoryStream())
+                {
+                    image.SaveAsPng(imageStream);
+                    image.Dispose();
+                    imageStream.Position = 0;
 
-                var msg = await new DiscordMessageBuilder()
-                    .WithContent($"vc e sus {member.Mention}")
-                    .WithFiles(new Dictionary<string, Stream>() { {"amogusUser.png", imageStream } })
-                    .SendAsync(ctx.Channel);
+                    var msg = await new DiscordMessageBuilder()
+                        .WithContent($"vc e sus {member.Mention}")
+                        .WithFiles(new Dictionary<string, Stream>() { {"amogusUser.png", imageStream } })
+                        .SendAsync(ctx.Channel);
 
-                /*
-                Bug: Probably a leak?
-                Using the command increases the RAM
-                and then doesn't decrease even though
-                is disposed.
-                */
-                imageStream.Dispose();
-                image.Dispose();
+                    /*
+                    Bug: Probably a leak?
+                    Using the command increases the RAM
+                    and then doesn't decrease even though
+                    is disposed.
+                    */
+                    imageStream.Dispose();
+                }
+                
+                
             }
 
             // using (var fs = new FileStream("files/images/meme/amogusUser.png", FileMode.Open, FileAccess.Read))
