@@ -89,7 +89,7 @@ namespace DiscordBot.Commands.Gifs
                         try
                         {
                             var fontf = SixLabors.Fonts.SystemFonts.Find("ubuntu");
-                            var fontb = new SixLabors.Fonts.Font(fontf, 32f, SixLabors.Fonts.FontStyle.Bold);
+                            var fontb = new SixLabors.Fonts.Font(fontf, 56f, SixLabors.Fonts.FontStyle.Bold);
 
                             var options = new DrawingOptions() 
                             {
@@ -116,10 +116,10 @@ namespace DiscordBot.Commands.Gifs
 
                             //const long bytesToReadgif = 4 * 1024 * 1024;
                             float sizeFont = 56f;
-                            if (image.Height > 256 && image.Width > 256) { sizeFont = 152f; }
-                            if (image.Height >= 384) { sizeFont = 176f; }
-                            if (image.Height >= 512) { sizeFont = 200f; }
-                            if (image.Height >= 640) { sizeFont = 224f; }
+                            // if (image.Height > 256 && image.Width > 256) { sizeFont = 152f; }
+                            // if (image.Height >= 384 && image.Width >= 384) { sizeFont = 176f; }
+                            // if (image.Height >= 512 && image.Width >= 384) { sizeFont = 200f; }
+                            // if (image.Height >= 640 && image.Width >= 384) { sizeFont = 224f; }
 
                             var scaledFont = new SixLabors.Fonts.Font( fontf, Convert.ToSingle(ratio) * sizeFont, SixLabors.Fonts.FontStyle.Bold );
 
