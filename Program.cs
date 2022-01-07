@@ -36,6 +36,7 @@ class Program
         commands.RegisterCommands<DiscordBot.Commands.Module>();
         commands.RegisterCommands<DiscordBot.Commands.Gifs.ModuleGifs>();
         commands.RegisterCommands<DiscordBot.Commands.Embed.ModuleEmbeds>();
+        commands.RegisterCommands<DiscordBot.Commands.Embed.Twitter.ModuleTwitter>();
 
         await discord.ConnectAsync();
         await Task.Delay(-1);
