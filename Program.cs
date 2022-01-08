@@ -1,4 +1,6 @@
 ﻿using DSharpPlus;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.CommandsNext;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -26,6 +28,12 @@ class Program
             Token = cfg.Token,
             TokenType = TokenType.Bot,
             Intents = DiscordIntents.AllUnprivileged,
+        });
+
+        discord.UseInteractivity(new InteractivityConfiguration()
+        {
+            PollBehaviour = DSharpPlus.Interactivity.Enums.PollBehaviour.KeepEmojis,
+            Timeout = TimeSpan.FromSeconds(30)
         });
 
         var commands = discord.UseCommandsNext(new CommandsNextConfiguration() 

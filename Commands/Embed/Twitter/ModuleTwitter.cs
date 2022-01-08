@@ -1,10 +1,12 @@
 using Tweetinvi;
-using HtmlAgilityPack;
+using Tweetinvi.Parameters;
+using Tweetinvi.Parameters.V2;
 using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using Tweetinvi.Parameters.V2;
-using Tweetinvi.Parameters;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
+using Newtonsoft.Json;
 
 namespace DiscordBot.Commands.Embed.Twitter
 {
@@ -15,9 +17,11 @@ namespace DiscordBot.Commands.Embed.Twitter
         {
             await ctx.TriggerTypingAsync();
 
+            var interactivity = ctx.Client.GetInteractivity();
+
             string[] keys = File.ReadAllLines("files/twitterkey.txt");
 
-            string message = string.Empty;
+            //string message = string.Empty;
 
             try
             {
@@ -47,72 +51,114 @@ namespace DiscordBot.Commands.Embed.Twitter
                     IncludeEntities = true,
                     PageSize = 5,
                     IncludeRetweets = true,
-
-                }); 
+                });
 
                 try
                 {
-                    if (timeline.FirstOrDefault().Media.FirstOrDefault() != null)
+                    // var tweets = timeline.OrderByDescending(x => x.CreatedAt <= DateTime.Now);
+                    List<DiscordEmbed> embeds = new(); 
+                    foreach (var tweet in timeline)
                     {
-                        var author = new DiscordEmbedBuilder.EmbedAuthor()
+                        if (tweet.Media.FirstOrDefault() != null)
                         {
-                            IconUrl = user.User.ProfileImageUrl,
-                            Name = $"@{strUser}",
-                            Url = $"https://www.twitter.com/{strUser}"
-                        };
+                            var author = new DiscordEmbedBuilder.EmbedAuthor()
+                            {
+                                IconUrl = user.User.ProfileImageUrl,
+                                Name = $"@{strUser}",
+                                Url = $"https://www.twitter.com/{strUser}"
+                            };
 
-                        var footer = new DiscordEmbedBuilder.EmbedFooter()
+                            var footer = new DiscordEmbedBuilder.EmbedFooter()
+                            {
+                                Text = "amogus",
+                                IconUrl = "https://i.imgur.com/82HZ341.png"
+                            };
+
+                            var embed = new DiscordEmbedBuilder()
+                            {
+                                Title = user.User.Name,
+                                Description = tweet.Text,
+                                Color = DiscordColor.Aquamarine,
+                                ImageUrl = tweet.Media.First().MediaURL,
+                                Timestamp = tweet.CreatedAt,
+                                Author = author,
+                                Footer = footer
+                            };
+
+                            embeds.Add(embed);
+                        }
+                        else
                         {
-                            Text = "amogus",
-                            IconUrl = "https://i.imgur.com/82HZ341.png"
-                        };
+                            var author = new DiscordEmbedBuilder.EmbedAuthor()
+                            {
+                                IconUrl = user.User.ProfileImageUrl,
+                                Name = $"@{strUser}",
+                                Url = $"https://www.twitter.com/{strUser}"
+                            };
 
-                        var embed = new DiscordEmbedBuilder()
-                        {
-                            Title = strUser,
-                            Description = timeline.First().Text,
-                            Color = DiscordColor.Aquamarine,
-                            ImageUrl = timeline.First().Media.First().MediaURLHttps,
-                            Timestamp = timeline.First().CreatedAt,
-                            Author = author,
-                            Footer = footer
-                        };
+                            var footer = new DiscordEmbedBuilder.EmbedFooter()
+                            {
+                                Text = "amogus",
+                                IconUrl = "https://i.imgur.com/82HZ341.png"
+                            };
 
-                        var msg = await new DiscordMessageBuilder()
-                            .WithEmbed(embed)
-                            .WithReply(ctx.Member.Id, true)
-                            .SendAsync(ctx.Channel);
+                            var embed = new DiscordEmbedBuilder()
+                            {
+                                Title = user.User.Name,
+                                Description = tweet.Text,
+                                Color = DiscordColor.Aquamarine,
+                                Timestamp = tweet.CreatedAt,
+                                Author = author,
+                                Footer = footer
+                            };
+
+                            embeds.Add(embed);
+                        }
                     }
-                    else
+
+                    var msg = new DiscordMessageBuilder()
+                        .WithEmbed(embeds.ElementAt(0))
+                        .WithReply(ctx.Member.Id, true);
+
+                    var message = await ctx.RespondAsync(msg);
+
+                    var pointleft = DiscordEmoji.FromName(ctx.Client, ":point_left:");
+                    var pointright = DiscordEmoji.FromName(ctx.Client, ":point_right:");
+
+                    await message.CreateReactionAsync(pointleft);
+                    await message.CreateReactionAsync(pointright);
+
+                    var left = await interactivity.WaitForReactionAsync(x => x.Emoji == pointleft, ctx.User, TimeSpan.FromSeconds(15));
+                    var right = await interactivity.WaitForReactionAsync(x => x.Emoji == pointright, ctx.User, TimeSpan.FromSeconds(15));
+
+                    int j = 0;
+
+                    
+                    while (!left.TimedOut && !right.TimedOut)
                     {
-                        var author = new DiscordEmbedBuilder.EmbedAuthor()
+                        var result = await interactivity.CollectReactionsAsync(message, TimeSpan.FromSeconds(1));
+                        foreach (var emoji in result)
                         {
-                            IconUrl = user.User.ProfileImageUrl,
-                            Name = $"@{strUser}",
-                            Url = $"https://www.twitter.com/{strUser}"
-                        };
-
-                        var footer = new DiscordEmbedBuilder.EmbedFooter()
-                        {
-                            Text = "amogus",
-                            IconUrl = "https://i.imgur.com/82HZ341.png"
-                        };
-
-                        var embed = new DiscordEmbedBuilder()
-                        {
-                            Title = user.User.Name,
-                            Description = timeline.First().Text,
-                            Color = DiscordColor.Aquamarine,
-                            Timestamp = timeline.First().CreatedAt,
-                            Author = author,
-                            Footer = footer
-                        };
-
-                        var msg = await new DiscordMessageBuilder()
-                            .WithEmbed(embed)
-                            .WithReply(ctx.Member.Id, true)
-                            .SendAsync(ctx.Channel);
+                            if (emoji.Emoji == pointleft)
+                            {
+                                if (j != 0)
+                                {
+                                    j--;
+                                    await message.ModifyAsync(embeds.ElementAt(j));
+                                }
+                            }
+                            else if (emoji.Emoji == pointright)
+                            {
+                                if (j != 4)
+                                {
+                                    j++;
+                                    await message.ModifyAsync(embeds.ElementAt(j));
+                                }
+                            }
+                        }
                     }
+
+                    
 
                     //await ctx.RespondAsync(message);
                 }
@@ -125,9 +171,6 @@ namespace DiscordBot.Commands.Embed.Twitter
             {
                 await ctx.RespondAsync(ex.Message);
             }
-            
-
-
 
         }
     }
