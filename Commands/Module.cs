@@ -53,6 +53,7 @@ namespace DiscordBot.Commands
         [Command("amogus")]
         public async Task AmogusCommand(CommandContext ctx, DiscordMember member)
         {
+            await ctx.TriggerTypingAsync();
             using (var fs = new FileStream("files/images/amogus.jpeg", FileMode.Open, FileAccess.Read))
             {
                 var msg = await new DiscordMessageBuilder()
@@ -66,6 +67,8 @@ namespace DiscordBot.Commands
         [Command("amogus")]
         public async Task AmogusCommand(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+
             var AllMembers = await ctx.Guild.GetAllMembersAsync();
 
             var random = new Random();

@@ -71,6 +71,8 @@ namespace DiscordBot.Commands.Embed
         [Command("random")]
         public async Task RandomCommand(CommandContext ctx)
         {
+            await ctx.TriggerTypingAsync();
+            
             string dir = $"files/data/guilds/{ctx.Guild.Id}";
             string jsonfile = $"{dir}/random.json";
 

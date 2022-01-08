@@ -14,6 +14,8 @@ namespace DiscordBot.Commands.Gifs
         [Cooldown(1, 20, CooldownBucketType.Channel)]
         public async Task CesarCommand(CommandContext ctx, [RemainingText] string message)
         {
+            await ctx.TriggerTypingAsync();
+            
             using (var image = Image.Load("files/gifs/cesarNegocios.gif"))
             {
                 image.Mutate( x => x.Resize(512, 512) );
@@ -58,6 +60,8 @@ namespace DiscordBot.Commands.Gifs
         [Cooldown(1, 20, CooldownBucketType.Channel)]
         public async Task GifCommand(CommandContext ctx, [RemainingText] string message)
         {
+            await ctx.TriggerTypingAsync();
+
             var urlGif = ctx.Message.Attachments.ElementAt(0).Url;
             using ( var userUrl = new HttpClient() )
             {
