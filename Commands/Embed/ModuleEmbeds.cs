@@ -173,6 +173,12 @@ namespace DiscordBot.Commands.Embed
                     Url = user.AvatarUrl
                 };
 
+                var footer = new DiscordEmbedBuilder.EmbedFooter()
+                {
+                    Text = $"Tempo restante: {storedData.Date.Subtract(storedData.Today)}",
+                    IconUrl = "https://i.imgur.com/82HZ341.png"
+                };
+
                 string[] linksArr = File.ReadAllLines("files/links.txt");
 
                 int randomGif = random.Next( 0, linksArr.Length );
@@ -181,10 +187,11 @@ namespace DiscordBot.Commands.Embed
                 var embed = new DiscordEmbedBuilder()
                 {
                     Title = "Sus amogus",
-                    Description = $"{user.DisplayName} é muito sus, tenha muito cuidado com essa pessoa.\nEssa pessoa é sus por: {storedData.Date.Subtract(storedData.Today)}",
+                    Description = $"{user.DisplayName} é muito sus, tenha muito cuidado com essa pessoa.",
                     Thumbnail = thumbnail,
                     ImageUrl = urlGif,
                     Color = DiscordColor.Red,
+                    Footer = footer
                 };
 
                 var msg = await new DiscordMessageBuilder()
