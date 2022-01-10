@@ -2,16 +2,66 @@ using Tweetinvi;
 using Tweetinvi.Parameters;
 using Tweetinvi.Parameters.V2;
 using DSharpPlus.Entities;
+using ConcurrentCollections;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.EventHandling;
 using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.Interactivity.Enums;
 using Newtonsoft.Json;
+using DSharpPlus.EventArgs;
+using DSharpPlus;
 
 namespace DiscordBot.Commands.Embed.Twitter
 {
     public class ModuleTwitter : BaseCommandModule
     {
+        private List<DiscordEmbed>? embeds;
+        private int j;
+        private async Task OnReactionAdded(DiscordClient client, MessageReactionAddEventArgs e)
+        {
+            var message = e.Message;
+            var pointleft = DiscordEmoji.FromName(client, ":point_left:");
+            var pointright = DiscordEmoji.FromName(client, ":point_right:");
+
+            if (embeds != null)
+            {
+                if (this.j != 0 && e.Emoji == pointleft && !e.User.IsBot)
+                {
+                    this.j--;
+                    await message.ModifyAsync(embeds.ElementAt(this.j));
+                }
+                else if (this.j != 4 && e.Emoji == pointright && !e.User.IsBot)
+                {
+                    this.j++;
+                    await message.ModifyAsync(embeds.ElementAt(this.j));
+                }
+            }
+            
+        }
+
+        private async Task OnReactionRemoved(DiscordClient client, MessageReactionRemoveEventArgs e)
+        {
+            var message = e.Message;
+            var pointleft = DiscordEmoji.FromName(client, ":point_left:");
+            var pointright = DiscordEmoji.FromName(client, ":point_right:");
+
+
+            if (embeds != null)
+            {
+                if (this.j != 0 && e.Emoji == pointleft && !e.User.IsBot)
+                {
+                    this.j--;
+                    await message.ModifyAsync(embeds.ElementAt(this.j));
+                }
+                else if (this.j != 4 && e.Emoji == pointright && !e.User.IsBot)
+                {
+                    this.j++;
+                    await message.ModifyAsync(embeds.ElementAt(this.j));
+                }
+            }
+        }
+
         [Command("twitter")]
         public async Task FetchUserCommand(CommandContext ctx, [RemainingText] string strUser)
         {
@@ -56,7 +106,7 @@ namespace DiscordBot.Commands.Embed.Twitter
                 try
                 {
                     // var tweets = timeline.OrderByDescending(x => x.CreatedAt <= DateTime.Now);
-                    List<DiscordEmbed> embeds = new(); 
+                    this.embeds = new(); 
                     foreach (var tweet in timeline)
                     {
                         if (tweet.Media.FirstOrDefault() != null)
@@ -128,36 +178,22 @@ namespace DiscordBot.Commands.Embed.Twitter
                     await message.CreateReactionAsync(pointleft);
                     await message.CreateReactionAsync(pointright);
 
-                    var left = await interactivity.WaitForReactionAsync(x => x.Emoji == pointleft, ctx.User, TimeSpan.FromSeconds(15));
-                    var right = await interactivity.WaitForReactionAsync(x => x.Emoji == pointright, ctx.User, TimeSpan.FromSeconds(15));
+                    TimeSpan time = TimeSpan.FromSeconds(DateTime.Now.Second + 30);
+                    TimeSpan now = TimeSpan.Zero;
 
-                    int j = 0;
+                    ctx.Client.MessageReactionAdded += this.OnReactionAdded;
+                    ctx.Client.MessageReactionRemoved += this.OnReactionRemoved;
 
-                    
-                    while (!left.TimedOut && !right.TimedOut)
+                    while (now < time)
                     {
-                        var result = await interactivity.CollectReactionsAsync(message, TimeSpan.FromSeconds(1));
-                        foreach (var emoji in result)
-                        {
-                            if (emoji.Emoji == pointleft)
-                            {
-                                if (j != 0)
-                                {
-                                    j--;
-                                    await message.ModifyAsync(embeds.ElementAt(j));
-                                }
-                            }
-                            else if (emoji.Emoji == pointright)
-                            {
-                                if (j != 4)
-                                {
-                                    j++;
-                                    await message.ModifyAsync(embeds.ElementAt(j));
-                                }
-                            }
-                        }
+                        now = TimeSpan.FromSeconds(DateTime.Now.Second);
                     }
 
+                    ctx.Client.MessageReactionAdded -= this.OnReactionAdded;
+                    ctx.Client.MessageReactionRemoved -= this.OnReactionRemoved;
+
+                    this.embeds = null;
+                    this.j = 0;
                     
 
                     //await ctx.RespondAsync(message);
