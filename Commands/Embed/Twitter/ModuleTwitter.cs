@@ -18,13 +18,14 @@ namespace DiscordBot.Commands.Embed.Twitter
     {
         private List<DiscordEmbed>? embeds;
         private int j;
+        private ulong MessageId = 0;
         private async Task OnReactionAdded(DiscordClient client, MessageReactionAddEventArgs e)
         {
             var message = e.Message;
             var pointleft = DiscordEmoji.FromName(client, ":point_left:");
             var pointright = DiscordEmoji.FromName(client, ":point_right:");
 
-            if (embeds != null)
+            if (embeds != null && this.MessageId == e.Message.Id)
             {
                 if (this.j != 0 && e.Emoji == pointleft && !e.User.IsBot)
                 {
@@ -47,7 +48,7 @@ namespace DiscordBot.Commands.Embed.Twitter
             var pointright = DiscordEmoji.FromName(client, ":point_right:");
 
 
-            if (embeds != null)
+            if (embeds != null && this.MessageId == e.Message.Id)
             {
                 if (this.j != 0 && e.Emoji == pointleft && !e.User.IsBot)
                 {
@@ -124,18 +125,41 @@ namespace DiscordBot.Commands.Embed.Twitter
                                 IconUrl = "https://i.imgur.com/82HZ341.png"
                             };
 
-                            var embed = new DiscordEmbedBuilder()
-                            {
-                                Title = user.User.Name,
-                                Description = tweet.Text,
-                                Color = DiscordColor.Aquamarine,
-                                ImageUrl = tweet.Media.First().MediaURL,
-                                Timestamp = tweet.CreatedAt,
-                                Author = author,
-                                Footer = footer
-                            };
+                            var mediaurl = tweet.Media.First().MediaURL;
 
-                            embeds.Add(embed);
+                            if (mediaurl.Contains("tweet_video_thumb"))
+                            {
+                                // mediaurl = mediaurl.Replace("pbs.", "video.");
+                                // mediaurl = mediaurl.Remove(mediaurl.IndexOf("_thumb"), 6);
+                                // mediaurl = mediaurl.Replace(".jpg", ".mp4");
+                                var embed = new DiscordEmbedBuilder()
+                                {
+                                    Title = user.User.Name,
+                                    Description = $"{tweet.Text} {tweet.Media.First().VideoDetails.Variants.First().URL}",
+                                    Color = DiscordColor.Aquamarine,
+                                    ImageUrl = tweet.Media.First().MediaURL,
+                                    Timestamp = tweet.CreatedAt,
+                                    Author = author,
+                                    Footer = footer
+                                };
+                                embeds.Add(embed);
+                            }
+                            else
+                            {
+                                var embed = new DiscordEmbedBuilder()
+                                {
+                                    Title = user.User.Name,
+                                    Description = tweet.Text,
+                                    Color = DiscordColor.Aquamarine,
+                                    ImageUrl = mediaurl,
+                                    Timestamp = tweet.CreatedAt,
+                                    Author = author,
+                                    Footer = footer
+                                };
+                                embeds.Add(embed);
+                            }
+
+
                         }
                         else
                         {
@@ -172,6 +196,8 @@ namespace DiscordBot.Commands.Embed.Twitter
 
                     var message = await ctx.RespondAsync(msg);
 
+                    this.MessageId = message.Id;
+
                     var pointleft = DiscordEmoji.FromName(ctx.Client, ":point_left:");
                     var pointright = DiscordEmoji.FromName(ctx.Client, ":point_right:");
 
@@ -205,7 +231,7 @@ namespace DiscordBot.Commands.Embed.Twitter
             }
             catch (Tweetinvi.Exceptions.TwitterException ex)
             {
-                await ctx.RespondAsync(ex.Message);
+                await ctx.RespondAsync("Twitter user não encontrado ou API não funcionando caso aconteça novamente");
             }
 
         }
