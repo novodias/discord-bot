@@ -12,44 +12,6 @@ namespace DiscordBot.Commands
 {
     public class Module : BaseCommandModule
     {
-        [Command("teste")]
-        public async Task ReactionCommand(CommandContext ctx)
-        {
-            try
-            {
-                var msg = await ctx.RespondAsync("cum");
-
-                var pointleft = DiscordEmoji.FromName(ctx.Client, ":point_left:");
-                var pointright = DiscordEmoji.FromName(ctx.Client, ":point_right:");
-
-                await msg.CreateReactionAsync(pointleft);
-                await msg.CreateReactionAsync(pointright);
-
-                var reactions = await msg.CollectReactionsAsync(new TimeSpan(0, 0, 30));
-
-                foreach (var react in reactions)
-                {
-                    if (react.Emoji == pointleft)
-                    {
-                        await msg.ModifyAsync("piss");
-                    }
-                    else if (react.Emoji == pointright)
-                    {
-                        await msg.ModifyAsync("poop");
-                    }
-                    else
-                    {
-                        await msg.ModifyAsync("cum");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                await ctx.RespondAsync(ex.Message);
-            }
-        }
-
-
         [Command("amogus")]
         public async Task AmogusCommand(CommandContext ctx, DiscordMember member)
         {

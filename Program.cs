@@ -6,7 +6,6 @@ using DSharpPlus.CommandsNext;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using DSharpPlus.EventArgs;
-using DiscordBot.Commands.Embed.Twitter;
 
 class Program
 {
@@ -61,6 +60,7 @@ class Program
         this.Commands.RegisterCommands<DiscordBot.Commands.Module>();
         this.Commands.RegisterCommands<DiscordBot.Commands.Gifs.ModuleGifs>();
         this.Commands.RegisterCommands<DiscordBot.Commands.Embed.ModuleEmbeds>();
+        this.Commands.RegisterCommands<DiscordBot.Commands.Images.ModuleImages>();
         this.Commands.RegisterCommands<DiscordBot.Commands.Embed.Twitter.ModuleTwitter>();
 
         await this.Client.ConnectAsync();
