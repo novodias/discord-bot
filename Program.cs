@@ -1,53 +1,98 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.CommandsNext;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using DSharpPlus.EventArgs;
+using DiscordBot.Commands.Embed.Twitter;
 
 class Program
 {
-    static void Main()
+    public readonly EventId BotEventId = new(42, "Bot");
+
+    public DiscordClient Client { get; set; }
+    public InteractivityExtension Interactivity { get; set; }
+    public CommandsNextExtension Commands { get; set; }
+    public static void Main()
     {
-        MainAsync().GetAwaiter().GetResult();
+        var prog = new Program();
+        prog.MainAsync().GetAwaiter().GetResult();
     } 
 
-    static async Task MainAsync()
+    public async Task MainAsync()
     {
         var json = string.Empty;
         using (var fs = File.OpenRead("files/config.json"))
         using (var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false)))
             json = await sr.ReadToEndAsync();
 
-        var cfg = JsonConvert.DeserializeObject<ConfigJson>(json);
+        var cfgjson = JsonConvert.DeserializeObject<ConfigJson>(json);
 
-        var discord = new DiscordClient(new DiscordConfiguration() 
+        var cfg = new DiscordConfiguration
         {
-            MinimumLogLevel = LogLevel.Debug,
-            LogTimestampFormat = "dd MM yyyy - hh:mm:ss tt",
-            Token = cfg.Token,
+            Token = cfgjson.Token,
             TokenType = TokenType.Bot,
             Intents = DiscordIntents.AllUnprivileged,
-        });
+            MinimumLogLevel = LogLevel.Debug
+        };
 
-        discord.UseInteractivity(new InteractivityConfiguration()
+        this.Client = new DiscordClient(cfg);
+
+        this.Client.Ready += this.Client_Ready;
+        this.Client.GuildAvailable += this.Client_GuildAvailable;
+        this.Client.ClientErrored += this.Client_ClientError;
+
+        this.Client.UseInteractivity(new InteractivityConfiguration()
         {
-            PollBehaviour = DSharpPlus.Interactivity.Enums.PollBehaviour.KeepEmojis,
-            Timeout = TimeSpan.FromSeconds(30)
+            PaginationBehaviour = PaginationBehaviour.Ignore,
+            PaginationDeletion = PaginationDeletion.KeepEmojis,
+            Timeout = TimeSpan.FromSeconds(15)
         });
 
-        var commands = discord.UseCommandsNext(new CommandsNextConfiguration() 
+        var ccfg = new CommandsNextConfiguration() 
         {
-            StringPrefixes = new[] { cfg.CommandPrefix }
-        });
+            StringPrefixes = new[] { cfgjson.CommandPrefix }
+        };
 
-        commands.RegisterCommands<DiscordBot.Commands.Module>();
-        commands.RegisterCommands<DiscordBot.Commands.Gifs.ModuleGifs>();
-        commands.RegisterCommands<DiscordBot.Commands.Embed.ModuleEmbeds>();
-        commands.RegisterCommands<DiscordBot.Commands.Embed.Twitter.ModuleTwitter>();
+        this.Commands = this.Client.UseCommandsNext(ccfg);
 
-        await discord.ConnectAsync();
+        this.Commands.RegisterCommands<DiscordBot.Commands.Module>();
+        this.Commands.RegisterCommands<DiscordBot.Commands.Gifs.ModuleGifs>();
+        this.Commands.RegisterCommands<DiscordBot.Commands.Embed.ModuleEmbeds>();
+        this.Commands.RegisterCommands<DiscordBot.Commands.Embed.Twitter.ModuleTwitter>();
+
+        await this.Client.ConnectAsync();
         await Task.Delay(-1);
+    }
+
+    private Task Client_Ready(DiscordClient sender, ReadyEventArgs e)
+    {
+        sender.Logger.LogInformation(BotEventId, "Client is ready to process events");
+
+        return Task.CompletedTask;
+    }
+
+    private Task Client_GuildAvailable(DiscordClient sender, GuildCreateEventArgs e)
+    {
+        sender.Logger.LogInformation(BotEventId, $"Guild available: {e.Guild.Name}");
+
+        return Task.CompletedTask;
+    }
+
+    private Task Client_ClientError(DiscordClient sender, ClientErrorEventArgs e)
+    {
+        sender.Logger.LogError(BotEventId, e.Exception, "Exception occured");
+
+        return Task.CompletedTask;
+    }
+
+    private Task Commands_CommandExecuted(CommandsNextExtension sender, CommandExecutionEventArgs e)
+    {
+        e.Context.Client.Logger.LogInformation(BotEventId, $"{e.Context.User.Username} successfully executed '{e.Command.QualifiedName}'");
+
+        return Task.CompletedTask;
     }
 
     public struct ConfigJson
