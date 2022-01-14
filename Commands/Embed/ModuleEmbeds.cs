@@ -98,11 +98,13 @@ namespace DiscordBot.Commands.Embed
                 jsonRandom.Today = new TimeSpan(DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
                 jsonRandom.Date = new TimeSpan(DateTime.Now.Day + 1, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
 
-                var AllUsers = await ctx.Guild.GetAllMembersAsync();
+                var allUsers = await ctx.Guild.GetAllMembersAsync();
                 
                 var random = new Random();
 
-                var user = AllUsers.ElementAt(random.Next(0, AllUsers.Count));
+                var users = allUsers.Where(x => !x.IsBot);
+
+                var user = users.ElementAt(random.Next(0, users.Count()));
                 jsonRandom.UserId = user.Id;
 
                 string output = JsonConvert.SerializeObject(jsonRandom);
@@ -124,6 +126,12 @@ namespace DiscordBot.Commands.Embed
                 int randomGif = random.Next( 0, linksArr.Length );
                 string urlGif = linksArr.ElementAt( randomGif );
 
+                var footer = new DiscordEmbedBuilder.EmbedFooter()
+                {
+                    Text = $"- Tempo restante: 1 dia",
+                    IconUrl = "https://i.imgur.com/82HZ341.png"
+                };
+
                 var embed = new DiscordEmbedBuilder()
                 {
                     Title = "Sus amogus",
@@ -131,6 +139,7 @@ namespace DiscordBot.Commands.Embed
                     Thumbnail = thumbnail,
                     ImageUrl = urlGif,
                     Color = DiscordColor.Red,
+                    Footer = footer,
                 };
 
                 var msg = await new DiscordMessageBuilder()
@@ -175,7 +184,7 @@ namespace DiscordBot.Commands.Embed
 
                 var footer = new DiscordEmbedBuilder.EmbedFooter()
                 {
-                    Text = $"Tempo restante: {storedData.Date.Subtract(storedData.Today)}",
+                    Text = $"- Tempo restante: {storedData.Date.Subtract(storedData.Today)}",
                     IconUrl = "https://i.imgur.com/82HZ341.png"
                 };
 
@@ -198,8 +207,6 @@ namespace DiscordBot.Commands.Embed
                     .WithEmbed(embed)
                     .SendAsync(ctx.Channel);
             }
-                
-            
         }
 
         [Command("members")]
