@@ -128,7 +128,7 @@ namespace DiscordBot.Commands.Embed
 
                 var footer = new DiscordEmbedBuilder.EmbedFooter()
                 {
-                    Text = $"- Tempo restante: 1 dia",
+                    Text = $"-  Tempo restante: 1 dia",
                     IconUrl = "https://i.imgur.com/82HZ341.png"
                 };
 
@@ -184,7 +184,7 @@ namespace DiscordBot.Commands.Embed
 
                 var footer = new DiscordEmbedBuilder.EmbedFooter()
                 {
-                    Text = $"- Tempo restante: {storedData.Date.Subtract(storedData.Today)}",
+                    Text = $"-  Tempo restante: {storedData.Date.Subtract(storedData.Today)}",
                     IconUrl = "https://i.imgur.com/82HZ341.png"
                 };
 
