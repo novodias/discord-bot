@@ -5,15 +5,15 @@ using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using Microsoft.Extensions.Logging;
 
-namespace DiscordBot.Commands.Embed.Twitter
+namespace DiscordBot.Interactivity.Embeds
 {
-    public class TwitterSend
+    public class EmbedSend
     {
-        private readonly Twitter Twitter;
+        private readonly Embed Embed;
 
-        public TwitterSend(DiscordClient client)
+        public EmbedSend(DiscordClient client)
         {
-            this.Twitter = new Twitter(client);
+            this.Embed = new Embed(client);
         }
 
         public async Task SendEmbedMessageAsync(DiscordChannel channel, DiscordUser user, IEnumerable<DiscordEmbed> embeds, TimeSpan timeout)
@@ -24,26 +24,26 @@ namespace DiscordBot.Commands.Embed.Twitter
 
             PaginationEmojis emojis = new();
 
-            var prequest = new TwitterRequest(embeds.ToList(), m, user, emojis, timeout);
+            var prequest = new EmbedRequest(embeds.ToList(), m, user, emojis, timeout);
 
-            await this.Twitter.DoPaginationAsync(prequest).ConfigureAwait(false);
+            await this.Embed.DoPaginationAsync(prequest).ConfigureAwait(false);
         }
     }
-    internal class Twitter : ITwitter
+    internal class Embed : IEmbed
     {
         readonly DiscordClient _client;
-        readonly ConcurrentHashSet<ITwitterRequest> _requests;
+        readonly ConcurrentHashSet<IEmbedRequest> _requests;
 
-        public Twitter(DiscordClient client)
+        public Embed(DiscordClient client)
         {
             this._client = client;
-            this._requests = new ConcurrentHashSet<ITwitterRequest>();
+            this._requests = new ConcurrentHashSet<IEmbedRequest>();
 
             this._client.MessageReactionAdded += this.HandleReactionAdd;
             this._client.MessageReactionRemoved += this.HandleReactionRemove;
         }
 
-        public async Task DoPaginationAsync(ITwitterRequest request)
+        public async Task DoPaginationAsync(IEmbedRequest request)
         {
             await ResetReactionsAsync(request).ConfigureAwait(false);
             this._requests.Add(request);
@@ -133,7 +133,7 @@ namespace DiscordBot.Commands.Embed.Twitter
             return Task.CompletedTask;
         }
 
-        private static async Task ResetReactionsAsync(ITwitterRequest p)
+        private static async Task ResetReactionsAsync(IEmbedRequest p)
         {
             var msg = await p.GetMessageAsync().ConfigureAwait(false);
             var emojis = await p.GetEmojisAsync().ConfigureAwait(false);
@@ -155,7 +155,7 @@ namespace DiscordBot.Commands.Embed.Twitter
             }
         }
 
-        private static async Task PaginateAsync(ITwitterRequest p, DiscordEmoji emoji)
+        private static async Task PaginateAsync(IEmbedRequest p, DiscordEmoji emoji)
         {
             var emojis = await p.GetEmojisAsync().ConfigureAwait(false);
             var msg = await p.GetMessageAsync().ConfigureAwait(false);
@@ -172,7 +172,7 @@ namespace DiscordBot.Commands.Embed.Twitter
             await builder.ModifyAsync(msg).ConfigureAwait(false);
         }
 
-        ~Twitter()
+        ~Embed()
         {
             this.Dispose();
         }

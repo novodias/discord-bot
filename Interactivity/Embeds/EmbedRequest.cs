@@ -2,11 +2,11 @@ using DSharpPlus;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Entities;
 
-namespace DiscordBot.Commands.Embed.Twitter
+namespace DiscordBot.Interactivity.Embeds
 {
-    internal class TwitterRequest : ITwitterRequest
+    internal class EmbedRequest : IEmbedRequest
     {
-        private TaskCompletionSource<bool>? _tcs;
+        private TaskCompletionSource<bool> _tcs;
         private readonly CancellationTokenSource _ct;
         private readonly TimeSpan _timeout;
         private readonly List<DiscordEmbed> _embeds;
@@ -14,7 +14,7 @@ namespace DiscordBot.Commands.Embed.Twitter
         private readonly PaginationEmojis _emojis;
         private readonly DiscordUser _user;
         private int _index = 0;
-        public TwitterRequest(List<DiscordEmbed> embeds, DiscordMessage msg, DiscordUser user, PaginationEmojis emojis, TimeSpan timeout)
+        public EmbedRequest(List<DiscordEmbed> embeds, DiscordMessage msg, DiscordUser user, PaginationEmojis emojis, TimeSpan timeout)
         {
             this._tcs = new();
             this._ct = new(timeout);
@@ -84,7 +84,7 @@ namespace DiscordBot.Commands.Embed.Twitter
             return this._tcs;
         }
         
-        ~TwitterRequest()
+        ~EmbedRequest()
         {
             this.Dispose();
         }

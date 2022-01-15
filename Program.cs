@@ -11,9 +11,9 @@ class Program
 {
     public readonly EventId BotEventId = new(42, "Bot");
 
-    public DiscordClient Client { get; set; }
-    public InteractivityExtension Interactivity { get; set; }
-    public CommandsNextExtension Commands { get; set; }
+    public DiscordClient? Client { get; set; }
+    public InteractivityExtension? Interactivity { get; set; }
+    public CommandsNextExtension? Commands { get; set; }
     public static void Main()
     {
         var prog = new Program();

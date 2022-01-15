@@ -1,8 +1,8 @@
 using DSharpPlus.Entities;
 
-namespace DiscordBot.Commands.Embed.Twitter
+namespace DiscordBot.Interactivity.Embeds
 {
-    public interface ITwitterRequest
+    public interface IEmbedRequest
     {
         int EmbedCount { get; }
 

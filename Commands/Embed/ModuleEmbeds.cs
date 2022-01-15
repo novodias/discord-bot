@@ -1,7 +1,7 @@
 using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using Newtonsoft.Json;
+using DiscordBot.Commands.Embed.RandomFiles;
 
 namespace DiscordBot.Commands.Embed
 {
@@ -73,105 +73,25 @@ namespace DiscordBot.Commands.Embed
         {
             await ctx.TriggerTypingAsync();
             
-            string dir = $"files/data/guilds/{ctx.Guild.Id}";
-            string jsonfile = $"{dir}/random.json";
-
-            if (!Directory.Exists(dir))
-            {
-                Directory.CreateDirectory(dir);
-            }
-            if (!File.Exists(jsonfile))
-            {
-                var classDate = new RandomClass(TimeSpan.Zero, TimeSpan.Zero);
-
-                string output = JsonConvert.SerializeObject(classDate);
-
-                using (StreamWriter sw = new(jsonfile) )
-                {
-                    await sw.WriteLineAsync(output);
-                }
-
-            }
-
-            async void RandomSelect(RandomClass jsonRandom)
-            {
-                jsonRandom.Today = new TimeSpan(DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
-                jsonRandom.Date = new TimeSpan(DateTime.Now.Day + 1, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
-
-                var allUsers = await ctx.Guild.GetAllMembersAsync();
-                
-                var random = new Random();
-
-                var users = allUsers.Where(x => !x.IsBot);
-
-                var user = users.ElementAt(random.Next(0, users.Count()));
-                jsonRandom.UserId = user.Id;
-
-                string output = JsonConvert.SerializeObject(jsonRandom);
-
-                using (StreamWriter sw = new(jsonfile) )
-                {
-                    await sw.WriteLineAsync(output);
-                }
-
-                var thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
-                {
-                    Height = 64,
-                    Width = 64,
-                    Url = user.AvatarUrl
-                };
-
-                string[] linksArr = File.ReadAllLines("files/links.txt");
-
-                int randomGif = random.Next( 0, linksArr.Length );
-                string urlGif = linksArr.ElementAt( randomGif );
-
-                var footer = new DiscordEmbedBuilder.EmbedFooter()
-                {
-                    Text = $"-  Tempo restante: 1 dia",
-                    IconUrl = "https://i.imgur.com/82HZ341.png"
-                };
-
-                var embed = new DiscordEmbedBuilder()
-                {
-                    Title = "Sus amogus",
-                    Description = $"{user.DisplayName} é muito sus, tenha muito cuidado com essa pessoa.",
-                    Thumbnail = thumbnail,
-                    ImageUrl = urlGif,
-                    Color = DiscordColor.Red,
-                    Footer = footer,
-                };
-
-                var msg = await new DiscordMessageBuilder()
-                    .WithEmbed(embed)
-                    .SendAsync(ctx.Channel);
-            }
-
-            string jsonString = string.Empty;
+            var members = await ctx.Guild.GetAllMembersAsync();
             
-            using (var fs = File.OpenRead(jsonfile))
-            using (var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
-            {
-                jsonString = await sr.ReadToEndAsync();
-            }
-            
-            var storedData = JsonConvert.DeserializeObject<RandomClass>(jsonString);
+            var storedData = await RandomCommandSel.RandomFile(ctx.Guild.Id);
 
             storedData.Today = new TimeSpan(DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
 
             if (storedData.Date == TimeSpan.Zero)
             {
-                RandomSelect(storedData);
+                var msg = await RandomCommandSel.RandomSelect(ctx.Guild.Id, members, storedData);
+                await msg.SendAsync(ctx.Channel);
             }
             else if (storedData.Today.CompareTo(storedData.Date) >= 0)
             {
-                RandomSelect(storedData);
+                var msg = await RandomCommandSel.RandomSelect(ctx.Guild.Id, members, storedData);
+                await msg.SendAsync(ctx.Channel);
             }
             else if (storedData.Today.CompareTo(storedData.Date) < 0)
             {
-                var AllUsers = await ctx.Guild.GetAllMembersAsync();
-
-                var user = AllUsers.Where(x => x.Id == storedData.UserId).First();
+                var user = members.Where(x => x.Id == storedData.UserId).First();
 
                 var random = new Random();
 
@@ -179,7 +99,7 @@ namespace DiscordBot.Commands.Embed
                 {
                     Height = 64,
                     Width = 64,
-                    Url = user.AvatarUrl
+                    Url = user.GetAvatarUrl(DSharpPlus.ImageFormat.Auto, 64)
                 };
 
                 var footer = new DiscordEmbedBuilder.EmbedFooter()
@@ -240,9 +160,6 @@ namespace DiscordBot.Commands.Embed
                 .WithEmbed(embed)
                 .WithReply(ctx.Message.Id, true)
                 .SendAsync(ctx.Channel);
-
-            // await ctx.RespondAsync($"All members: {message}");
-            
         }
     }
 }
