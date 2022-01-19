@@ -29,7 +29,7 @@ namespace DiscordBot.Commands.Embed.Twitter
             }
             catch (Exception ex)
             {
-                await ctx.RespondAsync("Usuário não encontrado");
+                await ctx.RespondAsync(ex.Message);
             }
         }
     }

@@ -35,13 +35,16 @@ namespace DiscordBot.Commands.Embed.RandomFiles
             string jsonfile = $"{dir}/random.json";
 
             jsonFile.Today = new TimeSpan(DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
-            jsonFile.Date = new TimeSpan(DateTime.Now.Day, DateTime.Now.Hour + 2, DateTime.Now.Minute, DateTime.Now.Second);
+            jsonFile.Date = new TimeSpan(DateTime.Now.Day + 1, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
 
+            string seed = $"{DateTime.Now.Year} + {DateTime.Now.Month} + {DateTime.Now.Day}";
+            var seedHash = seed.GetHashCode();
+            var randomSeed = new Random(seedHash);
             var random = new Random();
 
             var users = members.Where(x => !x.IsBot);
 
-            var user = users.ElementAt(random.Next(0, users.Count()));
+            var user = users.ElementAt(randomSeed.Next(0, users.Count()));
             jsonFile.UserId = user.Id;
 
             string output = JsonConvert.SerializeObject(jsonFile);
@@ -66,7 +69,7 @@ namespace DiscordBot.Commands.Embed.RandomFiles
 
             var footer = new DiscordEmbedBuilder.EmbedFooter()
             {
-                Text = $"-  Tempo restante: 2 horas",
+                Text = $"-   Tempo restante: 1 dia",
                 IconUrl = "https://i.imgur.com/82HZ341.png"
             };
 
@@ -85,8 +88,7 @@ namespace DiscordBot.Commands.Embed.RandomFiles
 
             return msg;
         }
-
-        public static async Task<RandomClass> RandomFile(ulong guildId)
+        public static async Task<RandomClass?> RandomFile(ulong guildId)
         {
             RandomFolder(guildId);
 
@@ -100,9 +102,11 @@ namespace DiscordBot.Commands.Embed.RandomFiles
             {
                 jsonString = await sr.ReadToEndAsync();
                 
-                sr.Dispose();
-                fs.Dispose();
+                sr.Close();
+                fs.Close();
             }
+
+            if (jsonString is null) { return null; }
 
             return JsonConvert.DeserializeObject<RandomClass>(jsonString);
         }

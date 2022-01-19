@@ -31,10 +31,11 @@ namespace DiscordBot.Commands.Embed
 
                 if ( linksList.Contains(link) )
                 {
-                    var msg = await new DiscordMessageBuilder()
+                    var msg =new DiscordMessageBuilder()
                         .WithReply(ctx.Message.Id, true)
-                        .WithContent("O link já existe")
-                        .SendAsync(ctx.Channel);
+                        .WithContent("O link já existe");
+                    
+                    await msg.SendAsync(ctx.Channel);
                         
                     return;
                 }
@@ -60,10 +61,11 @@ namespace DiscordBot.Commands.Embed
                 }
                 catch (Exception)
                 {
-                    var msg = await new DiscordMessageBuilder()
+                    var msg = new DiscordMessageBuilder()
                         .WithReply(ctx.Message.Id, true)
-                        .WithContent("Falha ao salvar o link.")
-                        .SendAsync(ctx.Channel);
+                        .WithContent("Falha ao salvar o link.");
+                    
+                    await msg.SendAsync(ctx.Channel);
                 }
             }
         }
@@ -77,55 +79,61 @@ namespace DiscordBot.Commands.Embed
             
             var storedData = await RandomCommandSel.RandomFile(ctx.Guild.Id);
 
-            storedData.Today = new TimeSpan(DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
-
-            if (storedData.Date == TimeSpan.Zero)
+            if (storedData is null) { await ctx.RespondAsync("Data do servidor null"); }
+            else
             {
-                var msg = await RandomCommandSel.RandomSelect(ctx.Guild.Id, members, storedData);
-                await msg.SendAsync(ctx.Channel);
-            }
-            else if (storedData.Today.CompareTo(storedData.Date) >= 0)
-            {
-                var msg = await RandomCommandSel.RandomSelect(ctx.Guild.Id, members, storedData);
-                await msg.SendAsync(ctx.Channel);
-            }
-            else if (storedData.Today.CompareTo(storedData.Date) < 0)
-            {
-                var user = members.Where(x => x.Id == storedData.UserId).First();
+                storedData.Today = new TimeSpan(DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
 
-                var random = new Random();
-
-                var thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
+                if (storedData.Date == TimeSpan.Zero)
                 {
-                    Height = 64,
-                    Width = 64,
-                    Url = user.GetAvatarUrl(DSharpPlus.ImageFormat.Auto, 64)
-                };
-
-                var footer = new DiscordEmbedBuilder.EmbedFooter()
+                    var msg = await RandomCommandSel.RandomSelect(ctx.Guild.Id, members, storedData);
+                    await msg.SendAsync(ctx.Channel);
+                }
+                else if (storedData.Today.CompareTo(storedData.Date) >= 0)
                 {
-                    Text = $"-  Tempo restante: {storedData.Date.Subtract(storedData.Today)}",
-                    IconUrl = "https://i.imgur.com/82HZ341.png"
-                };
-
-                string[] linksArr = File.ReadAllLines("files/links.txt");
-
-                int randomGif = random.Next( 0, linksArr.Length );
-                string urlGif = linksArr.ElementAt( randomGif );
-
-                var embed = new DiscordEmbedBuilder()
+                    var msg = await RandomCommandSel.RandomSelect(ctx.Guild.Id, members, storedData);
+                    await msg.SendAsync(ctx.Channel);
+                }
+                else if (storedData.Today.CompareTo(storedData.Date) < 0)
                 {
-                    Title = "Sus amogus",
-                    Description = $"{user.DisplayName} é muito sus, tenha muito cuidado com essa pessoa.",
-                    Thumbnail = thumbnail,
-                    ImageUrl = urlGif,
-                    Color = DiscordColor.Red,
-                    Footer = footer
-                };
+                    var user = members.Where(x => x.Id == storedData.UserId).First();
 
-                var msg = await new DiscordMessageBuilder()
-                    .WithEmbed(embed)
-                    .SendAsync(ctx.Channel);
+                    var random = new Random();
+
+                    var thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
+                    {
+                        Height = 64,
+                        Width = 64,
+                        Url = user.GetAvatarUrl(DSharpPlus.ImageFormat.Auto, 64)
+                    };
+
+                    var footer = new DiscordEmbedBuilder.EmbedFooter()
+                    {
+                        Text = $"-  Tempo restante: {storedData.Date.Subtract(storedData.Today)}",
+                        IconUrl = "https://i.imgur.com/82HZ341.png"
+                    };
+
+                    string[] linksArr = File.ReadAllLines("files/links.txt");
+
+                    int randomGif = random.Next( 0, linksArr.Length );
+                    string urlGif = linksArr.ElementAt( randomGif );
+
+                    var embed = new DiscordEmbedBuilder()
+                    {
+                        Title = "Sus amogus",
+                        Description = $"{user.DisplayName} é muito sus, tenha muito cuidado com essa pessoa.",
+                        Thumbnail = thumbnail,
+                        ImageUrl = urlGif,
+                        Color = DiscordColor.Red,
+                        Footer = footer
+                    };
+
+                    var msg = new DiscordMessageBuilder()
+                        .WithEmbed(embed);
+
+                    await msg.SendAsync(ctx.Channel);
+                }
+
             }
         }
 
@@ -156,10 +164,11 @@ namespace DiscordBot.Commands.Embed
 
             };
 
-            var msg = await new DiscordMessageBuilder()
+            var msg = new DiscordMessageBuilder()
                 .WithEmbed(embed)
-                .WithReply(ctx.Message.Id, true)
-                .SendAsync(ctx.Channel);
+                .WithReply(ctx.Message.Id, true);
+            
+            await msg.SendAsync(ctx.Channel);
         }
     }
 }

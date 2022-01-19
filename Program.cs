@@ -61,6 +61,7 @@ class Program
         this.Commands.RegisterCommands<DiscordBot.Commands.Gifs.ModuleGifs>();
         this.Commands.RegisterCommands<DiscordBot.Commands.Embed.ModuleEmbeds>();
         this.Commands.RegisterCommands<DiscordBot.Commands.Images.ModuleImages>();
+        this.Commands.RegisterCommands<DiscordBot.Commands.Embed.Twitch.ModuleTwitch>();
         this.Commands.RegisterCommands<DiscordBot.Commands.Embed.Twitter.ModuleTwitter>();
 
         await this.Client.ConnectAsync();
