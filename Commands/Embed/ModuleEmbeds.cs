@@ -31,7 +31,7 @@ namespace DiscordBot.Commands.Embed
 
                 if ( linksList.Contains(link) )
                 {
-                    var msg =new DiscordMessageBuilder()
+                    var msg = new DiscordMessageBuilder()
                         .WithReply(ctx.Message.Id, true)
                         .WithContent("O link já existe");
                     
