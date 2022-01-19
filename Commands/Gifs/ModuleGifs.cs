@@ -14,6 +14,8 @@ namespace DiscordBot.Commands.Gifs
         [Cooldown(1, 20, CooldownBucketType.Channel)]
         public async Task CesarCommand(CommandContext ctx, [RemainingText] string message)
         {
+            await ctx.TriggerTypingAsync();
+            
             using (var image = Image.Load("files/gifs/cesarNegocios.gif"))
             {
                 image.Mutate( x => x.Resize(512, 512) );
@@ -58,6 +60,8 @@ namespace DiscordBot.Commands.Gifs
         [Cooldown(1, 20, CooldownBucketType.Channel)]
         public async Task GifCommand(CommandContext ctx, [RemainingText] string message)
         {
+            await ctx.TriggerTypingAsync();
+
             var urlGif = ctx.Message.Attachments.ElementAt(0).Url;
             using ( var userUrl = new HttpClient() )
             {
@@ -76,84 +80,103 @@ namespace DiscordBot.Commands.Gifs
                         
                         var image = Image.Load(stream);
 
-                        int Width = Convert.ToInt32(image.Width / 1.2f);
-                        int Height = Convert.ToInt32(image.Height / 1.2f);
+                        // int Width;
+                        // int Height;
 
+                        // if ( image.Width > image.Height ) { Height = image.Width; Width = image.Width; }
+                        // else if ( image.Height > image.Width ) { Width = image.Height; Height = image.Height; }
+                        // else { Width = image.Width; Height = image.Height; }
 
-                        image.Mutate( x => x.Resize( Width, Height ) );
+                        // int Width = Convert.ToInt32(image.Width / 1);
+                        // int Height = Convert.ToInt32(image.Height / 1);
 
-                        // float x = image.Width / 1f;
-                        // float y = image.Height / 1f;
-                        // var ratioX = (double)x / image.Width;
-                        // var ratioY = (double)y / image.Height;
-                        // var ratio = Math.Min(ratioX, ratioY);
-                        
-                        // int Width = Decimal.ToInt32( Math.Round( Convert.ToDecimal( x ) ) );
-                        // int Height = Decimal.ToInt32( Math.Round( Convert.ToDecimal( y ) ) );
-                        
-                        // float dpiX = Convert.ToSingle(image.Metadata.HorizontalResolution);
-                        // float dpiY = Convert.ToSingle(image.Metadata.VerticalResolution);
-
-                        var fontf = SixLabors.Fonts.SystemFonts.Find("ubuntu");
-                        var fontb = new SixLabors.Fonts.Font(fontf, 32f, SixLabors.Fonts.FontStyle.Bold);
-
-                        var options = new DrawingOptions() 
+                        try
                         {
-                            TextOptions = new TextOptions()
+                            var fontf = SixLabors.Fonts.SystemFonts.Find("ubuntu");
+                            var fontb = new SixLabors.Fonts.Font(fontf, 56f, SixLabors.Fonts.FontStyle.Bold);
+
+                            var options = new DrawingOptions() 
                             {
-                                VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Center,
-                                WrapTextWidth = image.Width,
-                                HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center,
+                                TextOptions = new TextOptions()
+                                {
+                                    VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Center,
+                                    WrapTextWidth = image.Width,
+                                    HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center,
+                                }
+
+                            };
+                            
+                            var stringSize = SixLabors.Fonts.TextMeasurer.Measure(message, new SixLabors.Fonts.RendererOptions(fontb));
+
+                            int HeightFinal = Convert.ToInt32(stringSize.Height + 64f);
+                            // if (stringSize.Width > image.Width) { HeightFinal = ( image.Height / 6 ) * 2; }
+                            // else { HeightFinal = image.Height / 6; }
+
+                            var memeImage = new Image<Rgba32>(image.Width, HeightFinal, new Rgba32(255, 255, 255));
+
+                            var ratioX = (double)stringSize.Width / memeImage.Width;
+                            var ratioY = (double)stringSize.Height / memeImage.Height;
+                            var ratio = Math.Min(ratioX, ratioY);
+
+                            //const long bytesToReadgif = 4 * 1024 * 1024;
+                            float sizeFont = 56f;
+                            // if (image.Height > 256 && image.Width > 256) { sizeFont = 152f; }
+                            // if (image.Height >= 384 && image.Width >= 384) { sizeFont = 176f; }
+                            // if (image.Height >= 512 && image.Width >= 384) { sizeFont = 200f; }
+                            // if (image.Height >= 640 && image.Width >= 384) { sizeFont = 224f; }
+
+                            var scaledFont = new SixLabors.Fonts.Font( fontf, Convert.ToSingle(ratio) * sizeFont, SixLabors.Fonts.FontStyle.Bold );
+
+                            //image.Mutate( x => x.Resize( Width, Height ) );
+                            image.Mutate( x => x.Transform( new AffineTransformBuilder().AppendTranslation( new PointF(0, HeightFinal) ) ) );
+
+                            //float scalingFactor = memeImage.Height / stringSize.Height;
+                            //var scaledFont = new SixLabors.Fonts.Font(fontf, scalingFactor * fontb.Size, SixLabors.Fonts.FontStyle.Bold);
+
+                            image.Mutate( x => x.DrawImage(memeImage, 1f));
+                            image.Mutate( x => x.DrawText(
+                                options, 
+                                message, 
+                                scaledFont, 
+                                Color.Black, 
+                                new PointF( 0, memeImage.Height / 2f ) ) );
+
+                            if (image.Height > 256 && image.Width > 256)
+                            {
+                                image.Mutate( x => x.Resize( new ResizeOptions
+                                {
+                                    Mode = ResizeMode.Max,
+                                    Size = new Size(image.Width / 2, image.Width / 2),
+                                    Compand = true
+                                })); 
                             }
 
-                        };
-                        
-                        var stringSize = SixLabors.Fonts.TextMeasurer.Measure(message, new SixLabors.Fonts.RendererOptions(fontb));
+                            
+                            memeImage.Dispose();
 
-                        int HeightFinal = Convert.ToInt32(stringSize.Height + 64f);
-                        // if (stringSize.Width > image.Width) { HeightFinal = ( image.Height / 6 ) * 2; }
-                        // else { HeightFinal = image.Height / 6; }
+                            await using (Stream imageStream = new MemoryStream())
+                            {
+                                image.SaveAsGif(imageStream);
+                                image.Dispose();
+                                imageStream.Position = 0;
 
-                        var memeImage = new Image<Rgba32>(image.Width, HeightFinal, new Rgba32(255, 255, 255));
+                                if (imageStream.Length > bytesToRead) { await ctx.RespondAsync("Infelizmente o gif final tem mais que 8mbs..."); }
+                                else
+                                {
+                                var msg = await new DiscordMessageBuilder()
+                                    .WithFiles(new Dictionary<string, Stream>() { {"meme.gif", imageStream } })
+                                    .SendAsync(ctx.Channel);
+                                }
 
-                        var ratioX = (double)stringSize.Width / memeImage.Width;
-                        var ratioY = (double)stringSize.Height / memeImage.Height;
-                        var ratio = Math.Min(ratioX, ratioY);
-
-                        const long bytesToReadgif = 4 * 1024 * 1024;
-                        float sizeFont = 64f;
-                        if (stream.Length > bytesToReadgif) { sizeFont = 128f; }
-
-                        var scaledFont = new SixLabors.Fonts.Font( fontf, Convert.ToSingle(ratio) * sizeFont, SixLabors.Fonts.FontStyle.Bold );
-
-                        //image.Mutate( x => x.Resize( Width, Height ) );
-                        image.Mutate( x => x.Transform( new AffineTransformBuilder().AppendTranslation( new PointF(0, HeightFinal) ) ) );
-
-                        //float scalingFactor = memeImage.Height / stringSize.Height;
-                        //var scaledFont = new SixLabors.Fonts.Font(fontf, scalingFactor * fontb.Size, SixLabors.Fonts.FontStyle.Bold);
-
-                        image.Mutate( x => x.DrawImage(memeImage, 1f));
-                        image.Mutate( x => x.DrawText(
-                            options, 
-                            message, 
-                            scaledFont, 
-                            Color.Black, 
-                            new PointF( 0, memeImage.Height / 2f ) ) );
-                        
-                        memeImage.Dispose();
-
-                        await using (Stream imageStream = new MemoryStream())
-                        {
-                            image.SaveAsGif(imageStream);
-                            image.Dispose();
-                            imageStream.Position = 0;
-
-                            var msg = await new DiscordMessageBuilder()
-                                .WithFiles(new Dictionary<string, Stream>() { {"meme.gif", imageStream } })
-                                .SendAsync(ctx.Channel);
-
-                            await imageStream.DisposeAsync();
+                                await imageStream.DisposeAsync();
+                            }
                         }
+                        catch (Exception ex)
+                        {
+                            await ctx.RespondAsync(ex.Message);
+                        }
+
+                        
                     }
 
                 }

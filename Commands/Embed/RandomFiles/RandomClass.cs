@@ -1,4 +1,4 @@
-namespace DiscordBot
+namespace DiscordBot.Commands.Embed.RandomFiles
 {
     public class RandomClass
     {
