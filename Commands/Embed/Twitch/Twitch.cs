@@ -71,6 +71,29 @@ namespace DiscordBot.Commands.Embed.Twitch
             return msg;
         }
 
+        private async Task<DiscordMessageBuilder> StreamNull(string TypeNull)
+        {
+            await Task.Yield();
+            
+            var msg = new DiscordMessageBuilder().WithContent("Stream não foi encontrada");
+
+            if (TypeNull == "stream")
+            {
+                msg.Content = "Stream não foi encontrada";
+                return msg;
+            }
+            else if (TypeNull == "user")
+            {
+                msg.Content = "User não foi encontrado";
+                return msg;
+            }
+            else
+            {
+                msg.Content = "StreamNull parâmetro inválido";
+                return msg;
+            }
+        }
+
         public async Task<DiscordMessageBuilder> GetStreamEmbed(string twitchChannel)
         {
             var channel = await GetChannelAsync(twitchChannel);
@@ -86,7 +109,11 @@ namespace DiscordBot.Commands.Embed.Twitch
             List<string> login = new(1) { twitchChannel.ToLower() };
 
             var streamList = await twitchAPI.Helix.Streams.GetStreamsAsync(null, null, 1, null, null, "all", null, login);
+            if (streamList.Streams == null || streamList.Streams.Length == 0) { return await StreamNull("stream"); }
+
             var userList = await twitchAPI.Helix.Users.GetUsersAsync(null, login);
+            if (userList.Users == null || userList.Users.Length == 0) { return await StreamNull("user"); }
+
             var stream = streamList.Streams.First();
             var user = userList.Users.First();
 
@@ -98,17 +125,19 @@ namespace DiscordBot.Commands.Embed.Twitch
             var author = new DiscordEmbedBuilder.EmbedAuthor()
             {
                 Name = user.DisplayName,
+                IconUrl = user.ProfileImageUrl,
                 Url = $"https://www.twitch.tv/{user.DisplayName}"
             };
 
             var thumburl = stream.ThumbnailUrl.Replace("{width}", "512").Replace("{height}", "256");
+            var gameboxArt = $"https://static-cdn.jtvnw.net/ttv-boxart/{stream.GameId}-144x192.jpg";
 
             var thumbnail = new DiscordEmbedBuilder.EmbedThumbnail()
             {
-                Height = 64,
-                Width = 64,
-                Url = user.ProfileImageUrl
+                Url = gameboxArt
             };
+
+            var color = new DiscordColor(145, 70, 255);
 
             var embed = new DiscordEmbedBuilder() 
             {
@@ -117,7 +146,7 @@ namespace DiscordBot.Commands.Embed.Twitch
                 Thumbnail = thumbnail,
                 Description = $"`{stream.UserName}` is playing/streaming in the category: `{stream.GameName}`",
                 ImageUrl = thumburl,
-                Color = DiscordColor.Green,
+                Color = color,
                 Footer = footer,
             };
 
