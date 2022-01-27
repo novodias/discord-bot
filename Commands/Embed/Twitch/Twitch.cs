@@ -24,7 +24,7 @@ namespace DiscordBot.Commands.Embed.Twitch
             twitchAPI.Settings.AccessToken = cfgJson.AccessToken;
         }
 
-        private async Task<TwitchLib.Api.Helix.Models.Search.Channel?> GetChannelAsync(string twitchChannel)
+        public async Task<TwitchLib.Api.Helix.Models.Search.Channel?> GetChannelAsync(string twitchChannel)
         {
             var channel = await twitchAPI.Helix.Search.SearchChannelsAsync(twitchChannel, false, null, 1);
             var streamer = channel.Channels.FirstOrDefault();

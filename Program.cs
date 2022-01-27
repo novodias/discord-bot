@@ -1,11 +1,14 @@
 ﻿using DSharpPlus;
+using DSharpPlus.EventArgs;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
-using DSharpPlus.CommandsNext;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using DSharpPlus.EventArgs;
+using DiscordBot.MonitorTwitch;
+using TwitchLib.Api;
+using DiscordBot.Commands.Embed.Twitch;
 
 class Program
 {
@@ -14,6 +17,9 @@ class Program
     public DiscordClient? Client { get; set; }
     public InteractivityExtension? Interactivity { get; set; }
     public CommandsNextExtension? Commands { get; set; }
+    public LiveMonitor? live {get; set;}
+    public TwitchAPI? api {get; set;}
+    private FileSystemWatcher watcher {get; set;}
     public static void Main()
     {
         var prog = new Program();
@@ -23,8 +29,8 @@ class Program
     public async Task MainAsync()
     {
         var json = string.Empty;
-        using (var fs = File.OpenRead("files/config.json"))
-        using (var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false)))
+        using (var fsd = File.OpenRead("files/config.json"))
+        using (var sr = new StreamReader(fsd, new System.Text.UTF8Encoding(false)))
             json = await sr.ReadToEndAsync();
 
         var cfgjson = JsonConvert.DeserializeObject<ConfigJson>(json);
@@ -64,8 +70,128 @@ class Program
         this.Commands.RegisterCommands<DiscordBot.Commands.Embed.Twitch.ModuleTwitch>();
         this.Commands.RegisterCommands<DiscordBot.Commands.Embed.Twitter.ModuleTwitter>();
 
+        this.api = new();
+
+        var strJson = string.Empty;
+        using ( var fst = File.OpenRead("files/twitchkeys.json") )
+        using ( var sr = new StreamReader(fst, new System.Text.UTF8Encoding(false) ) )
+        {
+            strJson = sr.ReadToEnd();
+        }
+
+        var cfgJson = JsonConvert.DeserializeObject<TwitchJson>(strJson);
+
+        this.api.Settings.ClientId = cfgJson.ClientId;
+        this.api.Settings.AccessToken = cfgJson.AccessToken;
+
+        // --------------------------------------------------------------
+
+        if (!File.Exists("files/channels.json"))
+        {
+            var chns = new JsonChannels();
+
+            chns.Channels.Add("twitch");
+
+            strJson = JsonConvert.SerializeObject(chns);
+
+            using ( var fs = File.Open("files/channels.json", FileMode.OpenOrCreate, FileAccess.ReadWrite))
+            {
+                using ( var sw = new StreamWriter(fs, new System.Text.UTF8Encoding(false) ) )
+                {
+                    await sw.WriteLineAsync(strJson);
+                    await sw.DisposeAsync();
+                    fs.Dispose();
+                    fs.Close();
+                }
+            }
+
+            this.live = new LiveMonitor(this.Client, api, chns.Channels);
+        }
+        else
+        {
+            using ( var fs = File.Open("files/channels.json", FileMode.Open, FileAccess.Read))
+            {
+                using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
+                {
+                    strJson = sr.ReadToEnd();
+
+                    sr.Dispose();
+                    fs.Dispose();
+                    fs.Close();
+                }
+            }
+
+            var list = JsonConvert.DeserializeObject<JsonChannels>(strJson);
+
+            if (list is null)
+            {
+                list = new();
+            }
+
+            this.live = new LiveMonitor(this.Client, api, list.Channels);
+        }
+
+        await SetWatcherHotLoad();
+
         await this.Client.ConnectAsync();
         await Task.Delay(-1);
+    }
+
+    private async void OnChanged(object sender, FileSystemEventArgs e)
+    {
+        if (e.ChangeType != WatcherChangeTypes.Changed)
+        {
+            return;
+        }
+
+        try
+        {
+            
+            await Task.Delay(TimeSpan.FromSeconds(5));
+
+            var strJson = string.Empty;
+
+            using ( var fs = File.OpenRead("files/channels.json"))
+            {
+                using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
+                {
+                    strJson = await sr.ReadToEndAsync();
+
+                    sr.Dispose();
+                    await fs.DisposeAsync();
+                }
+            }
+
+            var list = JsonConvert.DeserializeObject<JsonChannels>(strJson) ?? 
+                throw new Exception("channels.json is null?");
+
+            // if (list.Channels.First() == string.Empty)
+            //     list.Channels.RemoveAt(0);
+            if ( this.Client is null || this.api is null) 
+                throw new Exception("Not possible to ctor LiveMonitor because DiscordClient or TwitchClient is null");
+
+            this.live = new(this.Client, this.api, list.Channels);
+        }
+        catch (Exception ex)
+        {
+            File.AppendAllText("files/changed.txt", ex.Message + ex.StackTrace);
+        }
+    }
+
+    private Task SetWatcherHotLoad()
+    {
+        _ = Task.Run( () => 
+        {
+            watcher = new FileSystemWatcher(@"files/")
+            {
+                NotifyFilter = NotifyFilters.LastWrite,
+                EnableRaisingEvents = true,
+                Filter = "channels.json"
+            };
+
+            watcher.Changed += OnChanged;
+        });
+        return Task.CompletedTask;
     }
 
     private Task Client_Ready(DiscordClient sender, ReadyEventArgs e)
@@ -89,13 +215,6 @@ class Program
         return Task.CompletedTask;
     }
 
-    private Task Commands_CommandExecuted(CommandsNextExtension sender, CommandExecutionEventArgs e)
-    {
-        e.Context.Client.Logger.LogInformation(BotEventId, $"{e.Context.User.Username} successfully executed '{e.Command.QualifiedName}'");
-
-        return Task.CompletedTask;
-    }
-
     public struct ConfigJson
     {
         [JsonProperty("token")]
@@ -104,5 +223,4 @@ class Program
         [JsonProperty("prefix")]
         public string CommandPrefix { get; private set; }
     }
-
 }
