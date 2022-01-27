@@ -131,74 +131,74 @@ class Program
             this.live = new LiveMonitor(this.Client, api, list.Channels);
         }
 
-        await SetWatcherHotLoad();
+        // await SetWatcherHotLoad();
 
         await this.Client.ConnectAsync();
         await Task.Delay(-1);
     }
 
-    private async void OnChanged(object sender, FileSystemEventArgs e)
-    {
-        if (e.ChangeType != WatcherChangeTypes.Changed)
-        {
-            return;
-        }
+    // private async void OnChanged(object sender, FileSystemEventArgs e)
+    // {
+    //     if (e.ChangeType != WatcherChangeTypes.Changed)
+    //     {
+    //         return;
+    //     }
 
-        try
-        {
+    //     try
+    //     {
             
-            await Task.Delay(TimeSpan.FromSeconds(5));
+    //         await Task.Delay(TimeSpan.FromSeconds(5));
 
-            if ( this.live is not null ) 
-            {
-                this.live.CancelToken();
-                this.live.Dispose();
-            }
+    //         if ( this.live is not null ) 
+    //         {
+    //             this.live.CancelToken();
+    //             this.live.Dispose();
+    //         }
 
-            var strJson = string.Empty;
+    //         var strJson = string.Empty;
 
-            using ( var fs = File.OpenRead("files/channels.json"))
-            {
-                using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
-                {
-                    strJson = await sr.ReadToEndAsync();
+    //         using ( var fs = File.OpenRead("files/channels.json"))
+    //         {
+    //             using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
+    //             {
+    //                 strJson = await sr.ReadToEndAsync();
 
-                    sr.Dispose();
-                    await fs.DisposeAsync();
-                }
-            }
+    //                 sr.Dispose();
+    //                 await fs.DisposeAsync();
+    //             }
+    //         }
 
-            var list = JsonConvert.DeserializeObject<JsonChannels>(strJson) ?? 
-                throw new Exception("channels.json is null?");
+    //         var list = JsonConvert.DeserializeObject<JsonChannels>(strJson) ?? 
+    //             throw new Exception("channels.json is null?");
 
-            // if (list.Channels.First() == string.Empty)
-            //     list.Channels.RemoveAt(0);
-            if ( this.Client is null || this.api is null) 
-                throw new Exception("Not possible to ctor LiveMonitor because DiscordClient or TwitchClient is null");
+    //         // if (list.Channels.First() == string.Empty)
+    //         //     list.Channels.RemoveAt(0);
+    //         if ( this.Client is null || this.api is null) 
+    //             throw new Exception("Not possible to ctor LiveMonitor because DiscordClient or TwitchClient is null");
 
-            this.live = new(this.Client, this.api, list.Channels);
-        }
-        catch (Exception ex)
-        {
-            File.AppendAllText("files/changed.txt", ex.Message + ex.StackTrace);
-        }
-    }
+    //         this.live = new(this.Client, this.api, list.Channels);
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         File.AppendAllText("files/changed.txt", ex.Message + ex.StackTrace);
+    //     }
+    // }
 
-    private Task SetWatcherHotLoad()
-    {
-        _ = Task.Run( () => 
-        {
-            watcher = new FileSystemWatcher(@"files/")
-            {
-                NotifyFilter = NotifyFilters.LastWrite,
-                EnableRaisingEvents = true,
-                Filter = "channels.json"
-            };
+    // private Task SetWatcherHotLoad()
+    // {
+    //     _ = Task.Run( () => 
+    //     {
+    //         watcher = new FileSystemWatcher(@"files/")
+    //         {
+    //             NotifyFilter = NotifyFilters.LastWrite,
+    //             EnableRaisingEvents = true,
+    //             Filter = "channels.json"
+    //         };
 
-            watcher.Changed += OnChanged;
-        });
-        return Task.CompletedTask;
-    }
+    //         watcher.Changed += OnChanged;
+    //     });
+    //     return Task.CompletedTask;
+    // }
 
     private Task Client_Ready(DiscordClient sender, ReadyEventArgs e)
     {

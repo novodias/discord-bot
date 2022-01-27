@@ -15,8 +15,9 @@ namespace DiscordBot.MonitorTwitch
         private LiveStreamMonitorService? _monitor;
         private TwitchAPI? _api;
         private readonly DiscordClient? _client;
-        private readonly CancellationTokenSource _cts;
-        private readonly CancellationToken _ct;
+        private CancellationTokenSource _cts;
+        private CancellationToken _ct;
+        private readonly FileSystemWatcher watcher;
         public LiveMonitor(DiscordClient client, TwitchAPI API, List<string> list)
         {
             _api = API;
@@ -24,7 +25,61 @@ namespace DiscordBot.MonitorTwitch
             _cts = new();
             _ct = _cts.Token;
 
+            watcher = new FileSystemWatcher(@"files/")
+            {
+                NotifyFilter = NotifyFilters.LastWrite,
+                EnableRaisingEvents = true,
+                Filter = "channels.json"
+            };
+
+            watcher.Changed += OnChanged;
+
             Task.Run( () => ConfigLiveMonitorAsync(list) );
+        }
+
+        private async void OnChanged(object sender, FileSystemEventArgs e)
+        {
+            if (e.ChangeType != WatcherChangeTypes.Changed)
+            {
+                return;
+            }
+
+            try
+            {
+                CancelToken();
+
+                var strJson = string.Empty;
+
+                await JsonChannels.WaitTasks();
+                using ( var fs = File.OpenRead("files/channels.json"))
+                {
+                    using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
+                    {
+                        strJson = await sr.ReadToEndAsync();
+
+                        sr.Dispose();
+                        await fs.DisposeAsync();
+                    }
+                }
+
+                var list = JsonConvert.DeserializeObject<JsonChannels>(strJson) ?? 
+                    throw new Exception("channels.json is null?");
+
+                // if (list.Channels.First() == string.Empty)
+                //     list.Channels.RemoveAt(0);
+                // if ( this.Client is null || this.api is null) 
+                    // throw new Exception("Not possible to ctor LiveMonitor because DiscordClient or TwitchClient is null");
+
+                // this.live = new(this.Client, this.api, list.Channels);
+                if (_monitor is not null)
+                    _monitor.OnStreamOnline -= Monitor_OnStreamOnline;
+                
+                await Task.Run( () => ConfigLiveMonitorAsync(list.Channels) );
+            }
+            catch (Exception ex)
+            {
+                File.AppendAllText("files/changed.txt", ex.Message + ex.StackTrace);
+            }
         }
 
         public void CancelToken()
@@ -37,6 +92,9 @@ namespace DiscordBot.MonitorTwitch
             {
                 _cts.Dispose();    
             }
+
+            _cts = new();
+            _ct = _cts.Token;
         }
 
         private async Task ConfigLiveMonitorAsync(List<string> ids)

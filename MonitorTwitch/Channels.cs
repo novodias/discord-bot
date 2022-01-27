@@ -30,34 +30,52 @@ namespace DiscordBot.MonitorTwitch
             return list;
         }
 
-        public static async Task SaveProfile(JsonChannels input, string guildId)
+        // private static Task? t1;
+        private static Task? t2;
+
+        public static Task WaitTasks()
+        {
+            if (t2 != null)
+            {
+                t2.Wait();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public static Task SaveProfile(JsonChannels input, string guildId)
         {
             string dir = "files/data/guilds/" + guildId;
             const string file = "twitchchannels.json";
 
-            if (!Directory.Exists(dir))
+            Task.Run ( async () => 
             {
-                Directory.CreateDirectory(dir);
-            }
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
 
-            string filedir = $"{dir}/{file}";
-            
-            if (!File.Exists($"{dir}/{file}"))
-            {
-                await SaveInitialChannels(input, guildId);
-            }
-            else
-            {
-                string content = await File.ReadAllTextAsync(filedir);
-                if (content is null)
+                string filedir = $"{dir}/{file}";
+                
+                if (!File.Exists($"{dir}/{file}"))
                 {
                     await SaveInitialChannels(input, guildId);
                 }
                 else
                 {
-                    await SaveChannels(input, guildId);
+                    string content = await File.ReadAllTextAsync(filedir);
+                    if (content is null)
+                    {
+                        await SaveInitialChannels(input, guildId);
+                    }
+                    else
+                    {
+                        await SaveChannels(input, guildId);
+                    }
                 }
-            }
+            });
+
+            return Task.CompletedTask;
         }
 
         private static async Task SaveInitialChannels(JsonChannels input, string guildId)
@@ -86,8 +104,6 @@ namespace DiscordBot.MonitorTwitch
             const string file = "twitchchannels.json";
             string dir = "files/data/guilds/" + guildId;
             var str = string.Empty;
-
-
 
             using (var fs = File.Open($"{dir}/{file}", FileMode.Open, FileAccess.Read))
             {
@@ -120,10 +136,13 @@ namespace DiscordBot.MonitorTwitch
             else
             {
                 // Why not AddRange? Because of lists that has only one object
-                foreach (var chn in input.Channels)
-                {
-                    filechannels.Channels.Add(chn);
-                }
+                var query = from chn in input.Channels
+                            where !filechannels.Channels.Contains(chn)
+                            select chn;
+                
+                if (query == null) { return; }
+
+                filechannels.Channels.AddRange(query);
 
                 str = JsonConvert.SerializeObject(filechannels);
 
@@ -140,69 +159,73 @@ namespace DiscordBot.MonitorTwitch
             }
         }
 
-        public static async Task SaveMainFile(JsonChannels input)
+        public static Task SaveMainFile(JsonChannels input)
         {
             const string file = "files/channels.json";
             
-            if (!File.Exists(file))
+            t2 = Task.Run( async () => 
             {
-                string strconf = JsonConvert.SerializeObject(input);
-                
-                using (var fs = File.Open(file, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                if (!File.Exists(file))
                 {
-                    using ( var sw = new StreamWriter(fs, new System.Text.UTF8Encoding(false)) )
+                    string strconf = JsonConvert.SerializeObject(input);
+                    
+                    using (var fs = File.Open(file, FileMode.OpenOrCreate, FileAccess.ReadWrite))
                     {
-                        await sw.WriteLineAsync(strconf);
+                        using ( var sw = new StreamWriter(fs, new System.Text.UTF8Encoding(false)) )
+                        {
+                            await sw.WriteLineAsync(strconf);
 
-                        await sw.DisposeAsync();
-                        await fs.DisposeAsync();
+                            await sw.DisposeAsync();
+                            await fs.DisposeAsync();
+                        }
                     }
                 }
-            }
-            else
-            {
-                var str = string.Empty;
-
-                using ( var fsr = File.Open(file, FileMode.Open, FileAccess.Read))
+                else
                 {
-                    using ( var sr = new StreamReader(fsr, new System.Text.UTF8Encoding(false)) )
-                    {
-                        str = await sr.ReadToEndAsync();
+                    var str = string.Empty;
 
-                        sr.Dispose();
-                        await fsr.DisposeAsync();
-                        fsr.Close();
+                    using ( var fsr = File.Open(file, FileMode.Open, FileAccess.Read))
+                    {
+                        using ( var sr = new StreamReader(fsr, new System.Text.UTF8Encoding(false)) )
+                        {
+                            str = await sr.ReadToEndAsync();
+
+                            sr.Dispose();
+                            await fsr.DisposeAsync();
+                            fsr.Close();
+                        }
+                    }
+
+
+                    // Will be throwned if the file exists and there's nothing inside.
+                    var filechannels = JsonConvert.DeserializeObject<JsonChannels>(str) ?? 
+                        throw new Exception("filechannels cannot be null");
+
+                    var query = from chn in input.Channels
+                                where !filechannels.Channels.Contains(chn)
+                                select chn;
+                    
+                    if (query == null) { return; }
+
+                    filechannels.Channels.AddRange(query);
+
+                    str = JsonConvert.SerializeObject(filechannels);
+
+                    using (var fsw = File.Open(file, FileMode.Open, FileAccess.Write))
+                    {
+                        using ( var sw = new StreamWriter(fsw, new System.Text.UTF8Encoding(false)) )
+                        {
+                            await sw.WriteLineAsync(str);
+
+                            await sw.DisposeAsync();
+                            await fsw.DisposeAsync();
+                            fsw.Close();
+                        }
                     }
                 }
+            });
 
-
-                // Will be throwned if the file exists and there's nothing inside.
-                var filechannels = JsonConvert.DeserializeObject<JsonChannels>(str) ?? 
-                    throw new Exception("filechannels cannot be null");
-
-                var query = from chn in input.Channels
-                            where !filechannels.Channels.Contains(chn)
-                            select chn;
-                
-                if (query == null) { return; }
-
-                filechannels.Channels.AddRange(query);
-
-                str = JsonConvert.SerializeObject(filechannels);
-
-                using (var fsw = File.Open(file, FileMode.Open, FileAccess.Write))
-                {
-                    using ( var sw = new StreamWriter(fsw, new System.Text.UTF8Encoding(false)) )
-                    {
-                        await sw.WriteLineAsync(str);
-
-                        await sw.DisposeAsync();
-                        await fsw.DisposeAsync();
-                        fsw.Close();
-                    }
-                }
-            }
-
+            return Task.CompletedTask;
         }
 
     }
