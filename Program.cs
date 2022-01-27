@@ -149,6 +149,12 @@ class Program
             
             await Task.Delay(TimeSpan.FromSeconds(5));
 
+            if ( this.live is not null ) 
+            {
+                this.live.CancelToken();
+                this.live.Dispose();
+            }
+
             var strJson = string.Empty;
 
             using ( var fs = File.OpenRead("files/channels.json"))

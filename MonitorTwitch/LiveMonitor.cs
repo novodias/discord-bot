@@ -13,157 +13,31 @@ namespace DiscordBot.MonitorTwitch
     public class LiveMonitor
     {
         private LiveStreamMonitorService? _monitor;
-        private readonly TwitchAPI? _api;
+        private TwitchAPI? _api;
         private readonly DiscordClient? _client;
-        private List<string> _ids;
-        // private FileSystemWatcher _watcher;
-        // private CancellationTokenSource _cts;
-        // private CancellationToken _ct;
+        private readonly CancellationTokenSource _cts;
+        private readonly CancellationToken _ct;
         public LiveMonitor(DiscordClient client, TwitchAPI API, List<string> list)
         {
             _api = API;
             _client = client;
-            _ids = list;
-            // _cts = new();
-            // _ct = _cts.Token;
+            _cts = new();
+            _ct = _cts.Token;
 
-            // _watcher = new FileSystemWatcher(@"files/")
-            // {
-            //     NotifyFilter = NotifyFilters.LastWrite,
-            //     Filter = "channels.json",
-            //     EnableRaisingEvents = true,
-            // };
-
-            // MEMORY LEAK!!!
-            // _watcher.Changed += OnChanged;
-            // _watcher.Created += OnCreated;
-
-            // Task.Run( () => ConfigLiveMonitorAsync(_ids), _ct );
-
-            Task.Run( () => ConfigLiveMonitorAsync(_ids) );
+            Task.Run( () => ConfigLiveMonitorAsync(list) );
         }
 
-        public LiveMonitor(List<string> list)
+        public void CancelToken()
         {
-            _ids = list;
-
-            // if (_ct.CanBeCanceled && _cts is not null)
-            // {
-            //     _cts.Cancel();
-            //     _cts.Dispose();
-            //     _cts = new();
-            //     _ct = _cts.Token;
-            // }
-
-            if (_monitor is not null)
+            try
             {
-                if (_monitor.Enabled)
-                {
-                    _monitor.Stop();
-                }
-                _monitor.OnStreamOnline -= Monitor_OnStreamOnline;
+                _cts.Cancel();
             }
-
-            // Task.Run( () => ConfigLiveMonitorAsync(_ids), _ct);
-
-            Task.Run( () => ConfigLiveMonitorAsync(_ids) );
+            finally
+            {
+                _cts.Dispose();    
+            }
         }
-
-        // public async static Task<JsonChannels> GetJson()
-        // {
-        //     var strJson = string.Empty;
-
-        //     using ( var fs = File.OpenRead("files/channels.json"))
-        //     {
-        //         using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
-        //         {
-        //             strJson = await sr.ReadToEndAsync();
-
-        //             sr.Dispose();
-        //             await fs.DisposeAsync();
-        //         }
-        //     }
-
-        //     var list = JsonConvert.DeserializeObject<JsonChannels>(strJson) ?? 
-        //         throw new Exception("list OnChanged is null");
-
-        //     return list;
-        // }
-
-        // private async void OnChanged(object sender, FileSystemEventArgs e)
-        // {
-        //     if (e.ChangeType != WatcherChangeTypes.Changed)
-        //     {
-        //         return;
-        //     }
-
-        //     if (_ct.CanBeCanceled)
-        //     {
-        //         _cts.Cancel();
-        //     }
-        //     _cts.Dispose();   
-        //     _cts = new();
-        //     _ct = _cts.Token;
-
-        //     try
-        //     {
-                
-        //         if (_monitor is null) { throw new Exception("_monitor can't be null"); }
-        //         _monitor.OnStreamOnline -= Monitor_OnStreamOnline;
-                
-        //         var strJson = string.Empty;
-
-        //         var list = await GetJson();
-
-        //         // if (list.Channels.First() == string.Empty)
-        //         //     list.Channels.RemoveAt(0);
-
-        //         _ids = list.Channels;
-                
-        //         await Task.Run( () => ConfigLiveMonitorAsync(_ids), _ct );
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         File.AppendAllText("files/changed.txt", ex.Message + ex.StackTrace);
-        //     }
-        // }
-
-        // private void OnCreated(object sender, FileSystemEventArgs e)
-        // {
-        //     var strJson = string.Empty;
-            
-        //     var fs = File.Open("files/channels.json", FileMode.Open, FileAccess.Read);
-        //     using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
-        //     {
-        //         strJson = sr.ReadToEnd();
-
-        //         sr.Dispose();
-        //         fs.Dispose();
-        //     }
-
-        //     var list = JsonConvert.DeserializeObject<JsonChannels>(strJson) ?? 
-        //         throw new Exception("list OnChanged is null");
-
-        //     if (list.Channels.First() == string.Empty)
-        //         list.Channels.RemoveAt(0);
-
-        //     File.AppendAllText("files/created.txt", "criou");
-
-        //     if (_monitor is null) { throw new Exception("_monitor can't be null"); }
-        //     _monitor.SetChannelsByName(list.Channels);
-        // }
-
-        // public void UpdateList(List<string> list)
-        // {
-        //     if (_ids.Equals(list))
-        //         return;
-            
-        //     _ids = list;
-
-        //     _monitor.SetChannelsByName(_ids);
-
-        //     Task.Run( () => ConfigLiveMonitorAsync(_ids) );
-        // }
 
         private async Task ConfigLiveMonitorAsync(List<string> ids)
         {         
@@ -178,26 +52,19 @@ namespace DiscordBot.MonitorTwitch
 
             _monitor.Start();
 
-            // _monitor.OnStreamOffline += Monitor_OnStreamOffline;
-            // _monitor.OnStreamUpdate += Monitor_OnStreamUpdate;
-            // _monitor.OnServiceStarted += Monitor_OnServiceStarted;
-            // _monitor.OnChannelsSet += Monitor_OnChannelsSet;
-
-            // while (!_ct.IsCancellationRequested)
-            // {
-            //     _ct.ThrowIfCancellationRequested();
-            //     await Task.Delay(-1);
-            // }
-
-            await Task.Delay(-1);
+            try
+            {
+                await Task.Delay(-1, _ct);
+            }
+            catch (TaskCanceledException) { }
         }
 
-        private async void Monitor_OnStreamOnline(object sender, OnStreamOnlineArgs e)
+        private async void Monitor_OnStreamOnline(object? sender, OnStreamOnlineArgs e)
         {
 
             string startFolder = @"files/data/guilds";
 
-            DirectoryInfo dir = new(startFolder);  
+            DirectoryInfo dir = new(startFolder);
 
             IEnumerable<FileInfo> fileList = dir.GetFiles("*.*", SearchOption.AllDirectories);
 
@@ -210,7 +77,7 @@ namespace DiscordBot.MonitorTwitch
                 where fileText.Contains(searchTerm)  
                 select file.Directory.Name; 
 
-            if (queryMatchingFiles is null) { return; }
+            if ( queryMatchingFiles is null ) { return; }
             
             List<ulong> gldsId = new( queryMatchingFiles.Count() );
 
@@ -251,36 +118,17 @@ namespace DiscordBot.MonitorTwitch
                 fileContents = File.ReadAllText(name);  
             }  
             return fileContents;  
-        } 
+        }
 
-        // public void Dispose()
-        // {
-        //     this._monitor.OnStreamOnline -= Monitor_OnStreamOnline;
-        //     this._monitor.Stop();
-        //     this._api = null;
-        //     this._client = null;
-        //     this._ids = null;
-        //     this._monitor = null;
-        // }
+        public void Dispose()
+        {
+            if (this._monitor != null && this._client != null && this._api != null)
+            {
+                this._monitor.OnStreamOnline -= Monitor_OnStreamOnline;
+                this._monitor = null;
+                this._api = null;
+            }
+        }
 
-        // private void Monitor_OnStreamUpdate(object sender, OnStreamUpdateArgs e)
-        // {
-        //     throw new NotImplementedException();
-        // }
-
-        // private void Monitor_OnStreamOffline(object sender, OnStreamOfflineArgs e)
-        // {
-        //     throw new NotImplementedException();
-        // }
-
-        // private void Monitor_OnChannelsSet(object sender, OnChannelsSetArgs e)       
-        // {
-        //     throw new NotImplementedException();
-        // }
-
-        // private void Monitor_OnServiceStarted(object sender, OnServiceStartedArgs e)
-        // {
-        //     throw new NotImplementedException();
-        // }
     }
 }
