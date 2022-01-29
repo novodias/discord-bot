@@ -15,6 +15,8 @@ namespace DiscordBot.Commands.Gifs
         public async Task CesarCommand(CommandContext ctx, [RemainingText] string message)
         {
             await ctx.TriggerTypingAsync();
+
+            if (string.IsNullOrEmpty(message)) { await ctx.RespondAsync("O comando não pode ser usado sem uma frase"); return; }
             
             using (var image = Image.Load("files/gifs/cesarNegocios.gif"))
             {
@@ -61,6 +63,8 @@ namespace DiscordBot.Commands.Gifs
         public async Task GifCommand(CommandContext ctx, [RemainingText] string message)
         {
             await ctx.TriggerTypingAsync();
+
+            if (string.IsNullOrEmpty(message)) { await ctx.RespondAsync("O comando não pode ser usado sem uma frase"); return; }
 
             var urlGif = ctx.Message.Attachments.ElementAt(0).Url;
             using ( var userUrl = new HttpClient() )

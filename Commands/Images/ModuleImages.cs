@@ -18,6 +18,8 @@ namespace DiscordBot.Commands.Images
 
             await ctx.TriggerTypingAsync();
 
+            if (string.IsNullOrEmpty(strLink)) { await ctx.RespondAsync("O comando não pode ser usado sem uma frase e url"); return; }
+
             string[] input = strLink.Split('#', 2, StringSplitOptions.None);
             string msgOutput = input.First();
             string imageLink = input.Last();

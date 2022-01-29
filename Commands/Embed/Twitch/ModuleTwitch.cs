@@ -16,6 +16,8 @@ namespace DiscordBot.Commands.Embed.Twitch
         {
             await ctx.TriggerTypingAsync();
 
+            if (string.IsNullOrEmpty(input)) { await ctx.RespondAsync("O comando não pode ser usado sem o canal twitch"); return; }
+
             if (Twitch == null) { Twitch = new(); }
             
             try
@@ -36,6 +38,8 @@ namespace DiscordBot.Commands.Embed.Twitch
         {
             // Transformar em funções, muita linha de código
             await ctx.TriggerTypingAsync();
+
+            if (string.IsNullOrEmpty(streamers)) { await ctx.RespondAsync("O comando não pode ser usado sem especificar os canais twitch"); return; }
 
             if (Twitch == null) { Twitch = new(); }
 

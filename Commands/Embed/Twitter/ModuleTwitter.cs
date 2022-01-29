@@ -13,6 +13,8 @@ namespace DiscordBot.Commands.Embed.Twitter
         {
             await ctx.TriggerTypingAsync();
 
+            if (string.IsNullOrEmpty(strUser)) { await ctx.RespondAsync("O comando não pode ser usado sem um user especificado"); return; }
+
             if ( EmbedSend == null ) { EmbedSend = new(ctx.Client); }
 
             try
