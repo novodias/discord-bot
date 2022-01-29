@@ -18,14 +18,14 @@ namespace DiscordBot.MonitorTwitch
         private CancellationTokenSource _cts;
         private CancellationToken _ct;
         private readonly FileSystemWatcher watcher;
-        private HashSet<string> _streamsOnline;
+        private HashSet<string> _streams;
         public LiveMonitor(DiscordClient client, TwitchAPI API, List<string> list)
         {
             _api = API;
             _client = client;
+            _streams = new();
             _cts = new();
             _ct = _cts.Token;
-            _streamsOnline = new();
 
             watcher = new FileSystemWatcher(@"files/")
             {
@@ -125,9 +125,9 @@ namespace DiscordBot.MonitorTwitch
 
         private async void Monitor_OnStreamOnline(object? sender, OnStreamOnlineArgs e)
         {
-            if (_streamsOnline.Contains(e.Stream.UserName.ToLower())) return;
+            if (_streams.Contains(e.Stream.UserName.ToLower())) return;
 
-            _streamsOnline.Add(e.Stream.UserName.ToLower());
+            _streams.Add(e.Stream.UserName.ToLower());
 
             string startFolder = @"files/data/guilds";
 
@@ -163,9 +163,9 @@ namespace DiscordBot.MonitorTwitch
 
         private void Monitor_OnStreamOffline(object? sender, OnStreamOfflineArgs e)
         {
-            if (_streamsOnline.Contains(e.Stream.UserName.ToLower()))
+            if (_streams.Contains(e.Stream.UserName.ToLower()))
             {
-                _streamsOnline.Remove(e.Stream.UserName.ToLower());
+                _streams.Remove(e.Stream.UserName.ToLower());
             }
         }
 
