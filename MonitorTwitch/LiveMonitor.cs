@@ -52,7 +52,7 @@ namespace DiscordBot.MonitorTwitch
 
                 var strJson = string.Empty;
 
-                await JsonChannels.WaitTasks();
+                await TwitchChannels.WaitTasks();
                 using ( var fs = File.OpenRead("files/channels.json"))
                 {
                     using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
@@ -64,7 +64,7 @@ namespace DiscordBot.MonitorTwitch
                     }
                 }
 
-                var list = JsonConvert.DeserializeObject<JsonChannels>(strJson) ?? 
+                var list = JsonConvert.DeserializeObject<TwitchChannels>(strJson) ?? 
                     throw new Exception("channels.json is null?");
 
                 // if (list.Channels.First() == string.Empty)

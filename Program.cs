@@ -88,7 +88,7 @@ class Program
 
         if (!File.Exists("files/channels.json"))
         {
-            var chns = new JsonChannels();
+            var chns = new TwitchChannels();
 
             chns.Channels.Add("twitch");
 
@@ -121,7 +121,7 @@ class Program
                 }
             }
 
-            var list = JsonConvert.DeserializeObject<JsonChannels>(strJson);
+            var list = JsonConvert.DeserializeObject<TwitchChannels>(strJson);
 
             if (list is null)
             {
@@ -168,7 +168,7 @@ class Program
     //             }
     //         }
 
-    //         var list = JsonConvert.DeserializeObject<JsonChannels>(strJson) ?? 
+    //         var list = JsonConvert.DeserializeObject<TwitchChannels>(strJson) ?? 
     //             throw new Exception("channels.json is null?");
 
     //         // if (list.Channels.First() == string.Empty)
