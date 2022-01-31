@@ -14,33 +14,25 @@ namespace DiscordBot.Commands.Embed.Twitch
             this.client = client;
         }
         
-        public async Task SubCommand(DiscordChannel channel, string operation, string guildid, DiscordRole? role = null)
+        public async Task SubCommand(DiscordChannel channel, MonitorEnum option, string guildid, DiscordRole? role = null)
         {
-            int option = 3;
-            operation = operation.ToLower();
-
-            if (operation == "add") { option = (int) MonitorEnum.Add; }
-            if (operation == "remove") { option = (int) MonitorEnum.Remove; }
-            if (operation == "roles") { option = (int) MonitorEnum.Roles; }
-            if (operation == "help") { option = (int) MonitorEnum.Help; }
-
             switch (option)
             {
-                case (int)MonitorEnum.Add:
+                case MonitorEnum.Add:
                     if ( role is null ) { await this.client.SendMessageAsync(channel, "??? cade o role caraio"); return; }
                     await this.AddRole(channel, guildid, role);
                 break;
 
-                case (int)MonitorEnum.Remove:
+                case MonitorEnum.Remove:
                     if ( role is null ) { await this.client.SendMessageAsync(channel, "??? cade o role caraio"); return; }
                     await this.RemoveRole(channel, guildid, role);
                 break;
 
-                case (int)MonitorEnum.Roles:
+                case MonitorEnum.Roles:
                     await this.ShowRoles(channel, guildid);
                 break;
 
-                case (int)MonitorEnum.Help:
+                case MonitorEnum.Help:
                     await this.ShowHelp(channel, guildid);
                 break;
 
@@ -59,13 +51,13 @@ namespace DiscordBot.Commands.Embed.Twitch
             if (file.Roles.Contains(role.Id.ToString()))
             {
                 msg.Content = "O role mencionado já foi adicionado préviamente";
-                await this.client.SendMessageAsync(channel, msg);
+                await msg.SendAsync(channel);
             }
             else
             {
                 file.Roles.Add(role.Id.ToString());
                 msg.Content = "Role adicionado com sucesso";
-                await this.client.SendMessageAsync(channel, msg);
+                await msg.SendAsync(channel);
             }
 
             try
@@ -88,12 +80,12 @@ namespace DiscordBot.Commands.Embed.Twitch
             {
                 file.Roles.Remove(role.Id.ToString());
                 msg.Content = "Role removido com sucesso";
-                await this.client.SendMessageAsync(channel, msg);
+                await msg.SendAsync(channel);
             }
             else
             {
                 msg.Content = "O role mencionado já foi removido préviamente ou não existe";
-                await this.client.SendMessageAsync(channel, msg);
+                await msg.SendAsync(channel);
             }
 
             try
@@ -146,23 +138,27 @@ namespace DiscordBot.Commands.Embed.Twitch
 
             if ( msgContent == string.Empty ) { embed.Description = "Vazio!"; }
 
-            await this.client.SendMessageAsync(channel, embed);
+            await new DiscordMessageBuilder().WithEmbed(embed).SendAsync(channel);
         }
 
         private async Task ShowHelp(DiscordChannel channel, string guildid)
         {
+            var msg = new DiscordMessageBuilder();
+
             if (File.Exists($"files/data/guilds/{guildid}/twitchchannels.json"))
             {
-                await this.client.SendMessageAsync(channel, "Sub-comandos disponíveis: `add`, `remove`, `roles` e `help`.");
+                msg.Content = "Sub-comandos disponíveis: `add`, `remove`, `roles` e `help`.";
             }
             else
             {
-                await this.client.SendMessageAsync(channel, "Sub-comandos disponíveis: `add` e `help`.");
+                msg.Content = "Sub-comandos disponíveis: `add` e `help`.";
             }
+
+            await msg.SendAsync(channel);
         }
     }
 
-    internal enum MonitorEnum
+    public enum MonitorEnum
     {
         Add,
         Remove,

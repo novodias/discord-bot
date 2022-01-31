@@ -34,185 +34,24 @@ namespace DiscordBot.Commands.Embed.Twitch
         }
 
         [Command("monitorroles")]
-        public async Task MonitorRoleCommand(CommandContext ctx, string operation, DiscordRole? role = null)
+        public async Task MonitorRoleCommand(CommandContext ctx, string? operation = null, DiscordRole? role = null)
         {
             await ctx.TriggerTypingAsync();
-
 
             if (!ctx.Member.Permissions.HasPermission(Permissions.Administrator))
             { await ctx.RespondAsync("Você não tem permissão para executar esse comando."); return; }
             
             if ( MonitorRoles == null ) { MonitorRoles = new(ctx.Client); }
+
+            MonitorEnum option = MonitorEnum.Help;
+
+            if (operation == "add") { option = MonitorEnum.Add; }
+            if (operation == "remove") { option = MonitorEnum.Remove; }
+            if (operation == "roles") { option = MonitorEnum.Roles; }
+            if (operation == "help") { option = MonitorEnum.Help; }
             
-            await MonitorRoles.SubCommand(ctx.Channel, operation, ctx.Guild.Id.ToString(), role);
-
-            // var str = string.Empty;
-            
-            // if (File.Exists($"files/data/guilds/{ctx.Guild.Id}/twitchchannels.json"))
-            // {
-            //     if (operation == "add" && role is not null)
-            //     {
-            //         using ( var fs = File.Open($"files/data/guilds/{ctx.Guild.Id}/twitchchannels.json", FileMode.OpenOrCreate, FileAccess.ReadWrite))
-            //         {
-            //             try
-            //             {
-            //                 using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false)) )
-            //                 {
-            //                     str = await sr.ReadToEndAsync();
-
-            //                     sr.Dispose();
-            //                 }
-
-            //                 var file = JsonConvert.DeserializeObject<TwitchChannels>(str);
-            //                 if (file.Roles is null) { file.Roles = new(); }
-            //                 if (file.Roles.Contains(role)) { await ctx.RespondAsync("O role mencionado já foi adicionado préviamente"); await fs.DisposeAsync(); return; }
-                            
-            //                 file.Roles.Add(role);
-
-            //                 str = JsonConvert.SerializeObject(file);
-
-            //                 using ( var sw = new StreamWriter(fs, new System.Text.UTF8Encoding(false)) )
-            //                 {
-            //                     await sw.WriteLineAsync(str);
-
-            //                     await sw.DisposeAsync();
-            //                 }
-                            
-            //                 await ctx.RespondAsync("Role adicionado");
-            //             }
-            //             catch (Exception ex)
-            //             {
-            //                 await ctx.RespondAsync(ex.Message + ex.StackTrace);
-            //             }
-            //         }
-
-            //     }
-            //     else if (operation == "remove" && role is not null)
-            //     {
-            //         using ( var fs = File.Open($"files/data/guilds/{ctx.Guild.Id}/twitchchannels.json", FileMode.OpenOrCreate, FileAccess.ReadWrite))
-            //         {
-            //             using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false)) )
-            //             {
-            //                 str = await sr.ReadToEndAsync();
-
-            //                 sr.Dispose();
-            //             }
-
-            //             var file = JsonConvert.DeserializeObject<TwitchChannels>(str);
-            //             if (file.Roles is null) { file.Roles = new(); }
-            //             if (!file.Roles.Contains(role)) { await ctx.RespondAsync("O role mencionado não existe ou já foi removido"); await fs.DisposeAsync(); return; }
-
-            //             file.Roles.Remove(role);
-
-            //             str = JsonConvert.SerializeObject(file);
-
-            //             using ( var sw = new StreamWriter(fs, new System.Text.UTF8Encoding(false)) )
-            //             {
-            //                 await sw.WriteLineAsync(str);
-
-            //                 await sw.DisposeAsync();
-            //             }
-            //         }
-            //     }
-            //     else
-            //     {
-            //         await ctx.RespondAsync("???");
-            //     }
-            // }
-            // else
-            // {
-            //     if (operation == "add" && role is not null)
-            //     {
-            //         using ( var fs = File.Open($"files/data/guilds/{ctx.Guild.Id}/twitchchannels.json", FileMode.OpenOrCreate, FileAccess.ReadWrite) )
-            //         {
-            //             var file = new TwitchChannels();
-                        
-            //             file.Roles.Add(role);
-
-            //             str = JsonConvert.SerializeObject(file);
-
-            //             using ( var sw = new StreamWriter(fs, new System.Text.UTF8Encoding(false)) )
-            //             {
-            //                 await sw.WriteLineAsync(str);
-
-            //                 await sw.DisposeAsync();
-            //             }
-            //         }
-            //     }
-            //     else if (operation == "remove" && role is not null)
-            //     {
-            //         await ctx.RespondAsync("Não é possível usar o sub-comando `remove` por que tem nada para remover!");
-            //     }
-            // }
+            await MonitorRoles.SubCommand(ctx.Channel, option, ctx.Guild.Id.ToString(), role);
         }
-
-        // [Command("monitorroles")]
-        // public async Task MonitorRoleCommand(CommandContext ctx, string operation)
-        // {
-        //     await ctx.TriggerTypingAsync();
-
-        //     var str = string.Empty;
-
-        //     if (!ctx.Member.Permissions.HasPermission(Permissions.Administrator)) { await ctx.RespondAsync("Você não tem permissão para executar esse comando."); return; }
-            
-        //     if (File.Exists($"files/data/guilds/{ctx.Guild.Id}/twitchchannels.json"))
-        //     {
-        //         if (operation == "help" || string.IsNullOrEmpty(operation))
-        //         {
-        //             await ctx.RespondAsync("Sub-comandos disponíveis: `add`, `remove`, `roles` e `help`.");
-        //         }
-        //         else if (operation == "roles")
-        //         {
-        //             using (var fs = File.OpenRead($"files/data/guilds/{ctx.Guild.Id}/twitchchannels.json"))
-        //             {
-        //                 using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false)) )
-        //                 {
-        //                     str = await sr.ReadToEndAsync();
-        //                 }
-        //             }
-
-        //             var file = JsonConvert.DeserializeObject<TwitchChannels>(str);
-
-        //             string msgContent = string.Empty;
-
-        //             foreach (var item in file.Roles)
-        //             {
-        //                 if (msgContent == string.Empty)
-        //                 {
-        //                     msgContent += $"`{item.Name}`";
-        //                 }
-        //                 else
-        //                 {
-        //                     msgContent += $", `{item.Name}`";
-        //                 }
-        //             }
-
-        //             if (string.IsNullOrEmpty(msgContent))
-        //             {
-        //                 await ctx.RespondAsync("Não tem roles adicionados.");
-        //             }
-        //             else
-        //             {
-        //                 await ctx.RespondAsync($"Roles adicionados: {msgContent}");
-        //             }
-        //         }
-        //         else if (operation == "add" || operation == "remove")
-        //         {
-        //             await ctx.RespondAsync("Role não mencionado!");
-        //         }
-        //         else
-        //         {
-        //             await ctx.RespondAsync("???");
-        //         }
-        //     }
-        //     else
-        //     {
-        //         if (operation == "help" || string.IsNullOrEmpty(operation))
-        //         {
-        //             await ctx.RespondAsync("Sub-comandos disponíveis: `add` e `help`.");
-        //         }
-        //     }
-        // }
 
         [Command("monitor")]
         public async Task MonitorCommand(CommandContext ctx, [RemainingText] string streamers)
@@ -223,6 +62,8 @@ namespace DiscordBot.Commands.Embed.Twitch
             if (File.Exists($"files/data/guilds/{ctx.Guild.Id}/twitchchannels.json"))
             {
                 var file = await TwitchChannels.GetContent(ctx.Guild.Id.ToString());
+                var msg = new DiscordMessageBuilder().WithReply(ctx.Message.Id, true);
+
                 if ( file.Roles is not null )
                 {
                     var query = from role in file.Roles
@@ -233,7 +74,9 @@ namespace DiscordBot.Commands.Embed.Twitch
                     {
                         if (!ctx.Member.Permissions.HasPermission(Permissions.Administrator))
                         {
-                            await ctx.RespondAsync("Você não tem role ou admin para usar esse comando"); 
+                            // await ctx.RespondAsync("Você não tem role ou admin para usar esse comando"); 
+                            msg.Content = "Você não tem role ou admin para usar esse comando";
+                            await msg.SendAsync(ctx.Channel);
                             return; 
                         }
                     }
@@ -241,7 +84,12 @@ namespace DiscordBot.Commands.Embed.Twitch
                 else
                 {
                     if (!ctx.Member.Permissions.HasPermission(Permissions.Administrator))
-                    { await ctx.RespondAsync("Você não tem admin para usar esse comando"); return; }
+                    { 
+                        // await ctx.RespondAsync("Você não tem admin para usar esse comando"); 
+                        msg.Content = "Você não tem admin para usar esse comando";
+                        await msg.SendAsync(ctx.Channel);
+                        return; 
+                    }
                 }
             }
 
