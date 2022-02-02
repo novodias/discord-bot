@@ -64,8 +64,8 @@ namespace DiscordBot.Commands.Images
                                 TextOptions = new TextOptions()
                                 {
                                     VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Top,
-                                    WrapTextWidth = image.Width,
                                     HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center,
+                                    WrapTextWidth = image.Width,
                                     DpiX = image.Width,
                                     DpiY = image.Height,
                                 }
@@ -77,8 +77,8 @@ namespace DiscordBot.Commands.Images
                                 TextOptions = new TextOptions()
                                 {
                                     VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Top,
-                                    WrapTextWidth = image.Width,
                                     HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center,
+                                    WrapTextWidth = image.Width,
                                     DpiX = image.Width,
                                     DpiY = image.Height,
                                 }
@@ -87,28 +87,8 @@ namespace DiscordBot.Commands.Images
                             
                             var stringSize = SixLabors.Fonts.TextMeasurer.Measure(msgOutput, new SixLabors.Fonts.RendererOptions(fontb));
 
-                            // int HeightFinal = Convert.ToInt32(stringSize.Height + 64f);
-
-                            // var memeImage = new Image<Rgba32>(image.Width, HeightFinal, new Rgba32(255, 255, 255));
-
-                            // var ratioX = (double)stringSize.Width / image.Width;
-                            // var ratioY = (double)stringSize.Height / image.Height;
-                            // var ratio = Math.Min(ratioX, ratioY);
-
-                            // float sizeFont = 86f;
-
-                            // var scaledFont = new SixLabors.Fonts.Font( fontf, 86f, SixLabors.Fonts.FontStyle.Bold );
-
-                            // image.Mutate( x => x.Transform( new AffineTransformBuilder().AppendTranslation( new PointF(0, HeightFinal) ) ) );
-
-                            // image.Mutate( x => x.DrawImage(memeImage, 1f));
-
-                            // image.Mutate( x => x.DrawText(
-                            //     options, 
-                            //     msgOutputArr.First(), 
-                            //     scaledFont, 
-                            //     Color.Black, 
-                            //     new PointF( 0, HeightFinal / 2f ) ) );
+                            int bottom = image.Height - image.Height / 8;
+                            
                             if (msgOutputArr == null)
                             {
                                 image.Mutate( x => x.DrawText(
@@ -135,7 +115,7 @@ namespace DiscordBot.Commands.Images
                                     fontb,
                                     Brushes.Solid(Color.White),
                                     Pens.Solid(Color.Black, 2f),
-                                    new PointF( 0, image.Height / 1.2f ) ) );
+                                    new PointF( 0, bottom ) ) );
                             }
 
                             // memeImage.Dispose();
