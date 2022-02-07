@@ -71,135 +71,70 @@ class Program
         this.Commands.RegisterCommands<DiscordBot.Commands.Embed.Twitter.ModuleTwitter>();
         this.Commands.RegisterCommands<DiscordBot.Commands.Game.ModuleJokenpo>();
 
-        // this.api = new();
+        this.api = new();
 
-        // var strJson = string.Empty;
-        // using ( var fst = File.OpenRead("files/twitchkeys.json") )
-        // using ( var sr = new StreamReader(fst, new System.Text.UTF8Encoding(false) ) )
-        // {
-        //     strJson = sr.ReadToEnd();
-        // }
+        var strJson = string.Empty;
+        using ( var fst = File.OpenRead("files/twitchkeys.json") )
+        using ( var sr = new StreamReader(fst, new System.Text.UTF8Encoding(false) ) )
+        {
+            strJson = sr.ReadToEnd();
+        }
 
-        // var cfgJson = JsonConvert.DeserializeObject<TwitchJson>(strJson);
+        var cfgJson = JsonConvert.DeserializeObject<TwitchJson>(strJson);
 
-        // this.api.Settings.ClientId = cfgJson.ClientId;
-        // this.api.Settings.AccessToken = cfgJson.AccessToken;
+        this.api.Settings.ClientId = cfgJson.ClientId;
+        this.api.Settings.AccessToken = cfgJson.AccessToken;
 
         // --------------------------------------------------------------
 
-        // if (!File.Exists("files/channels.json"))
-        // {
-        //     var chns = new TwitchChannels();
+        if (!File.Exists("files/channels.json"))
+        {
+            var chns = new TwitchChannels();
 
-        //     chns.Channels.Add("twitch");
+            chns.Channels.Add("twitch");
 
-        //     strJson = JsonConvert.SerializeObject(chns);
+            strJson = JsonConvert.SerializeObject(chns);
 
-        //     using ( var fs = File.Open("files/channels.json", FileMode.OpenOrCreate, FileAccess.ReadWrite))
-        //     {
-        //         using ( var sw = new StreamWriter(fs, new System.Text.UTF8Encoding(false) ) )
-        //         {
-        //             await sw.WriteLineAsync(strJson);
-        //             await sw.DisposeAsync();
-        //             fs.Dispose();
-        //             fs.Close();
-        //         }
-        //     }
+            using ( var fs = File.Open("files/channels.json", FileMode.OpenOrCreate, FileAccess.ReadWrite))
+            {
+                using ( var sw = new StreamWriter(fs, new System.Text.UTF8Encoding(false) ) )
+                {
+                    await sw.WriteLineAsync(strJson);
+                    await sw.DisposeAsync();
+                    fs.Dispose();
+                    fs.Close();
+                }
+            }
 
-        //     this.live = new LiveMonitor(this.Client, api, chns.Channels);
-        // }
-        // else
-        // {
-        //     using ( var fs = File.Open("files/channels.json", FileMode.Open, FileAccess.Read))
-        //     {
-        //         using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
-        //         {
-        //             strJson = sr.ReadToEnd();
+            this.live = new LiveMonitor(this.Client, api, chns.Channels);
+        }
+        else
+        {
+            using ( var fs = File.Open("files/channels.json", FileMode.Open, FileAccess.Read))
+            {
+                using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
+                {
+                    strJson = sr.ReadToEnd();
 
-        //             sr.Dispose();
-        //             fs.Dispose();
-        //             fs.Close();
-        //         }
-        //     }
+                    sr.Dispose();
+                    fs.Dispose();
+                    fs.Close();
+                }
+            }
 
-        //     var list = JsonConvert.DeserializeObject<TwitchChannels>(strJson);
+            var list = JsonConvert.DeserializeObject<TwitchChannels>(strJson);
 
-        //     if (list is null)
-        //     {
-        //         list = new();
-        //     }
+            if (list is null)
+            {
+                list = new();
+            }
 
-        //     this.live = new LiveMonitor(this.Client, api, list.Channels);
-        // }
-
-        // await SetWatcherHotLoad();
+            this.live = new LiveMonitor(this.Client, api, list.Channels);
+        }
 
         await this.Client.ConnectAsync();
         await Task.Delay(-1);
     }
-
-    // private async void OnChanged(object sender, FileSystemEventArgs e)
-    // {
-    //     if (e.ChangeType != WatcherChangeTypes.Changed)
-    //     {
-    //         return;
-    //     }
-
-    //     try
-    //     {
-            
-    //         await Task.Delay(TimeSpan.FromSeconds(5));
-
-    //         if ( this.live is not null ) 
-    //         {
-    //             this.live.CancelToken();
-    //             this.live.Dispose();
-    //         }
-
-    //         var strJson = string.Empty;
-
-    //         using ( var fs = File.OpenRead("files/channels.json"))
-    //         {
-    //             using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
-    //             {
-    //                 strJson = await sr.ReadToEndAsync();
-
-    //                 sr.Dispose();
-    //                 await fs.DisposeAsync();
-    //             }
-    //         }
-
-    //         var list = JsonConvert.DeserializeObject<TwitchChannels>(strJson) ?? 
-    //             throw new Exception("channels.json is null?");
-
-    //         // if (list.Channels.First() == string.Empty)
-    //         //     list.Channels.RemoveAt(0);
-    //         if ( this.Client is null || this.api is null) 
-    //             throw new Exception("Not possible to ctor LiveMonitor because DiscordClient or TwitchClient is null");
-
-    //         this.live = new(this.Client, this.api, list.Channels);
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         File.AppendAllText("files/changed.txt", ex.Message + ex.StackTrace);
-    //     }
-    // }
-
-    // private Task SetWatcherHotLoad()
-    // {
-    //     _ = Task.Run( () => 
-    //     {
-    //         watcher = new FileSystemWatcher(@"files/")
-    //         {
-    //             NotifyFilter = NotifyFilters.LastWrite,
-    //             EnableRaisingEvents = true,
-    //             Filter = "channels.json"
-    //         };
-
-    //         watcher.Changed += OnChanged;
-    //     });
-    //     return Task.CompletedTask;
-    // }
 
     private Task Client_Ready(DiscordClient sender, ReadyEventArgs e)
     {
