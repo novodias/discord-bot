@@ -66,11 +66,14 @@ namespace DiscordBot.Commands.Game
 
         public async Task Setup()
         {
-            if ( _userone is null || _usertwo is null )
-                return;
+            if ( _userone is null || _usertwo is null || _userone == _usertwo || _usertwo.IsBot )
+            {
+                _botmsg = await new DiscordMessageBuilder()
+                    .WithContent($"Opa, calma lá amigo, tem algo de errado com o comando que você digitou.")
+                    .SendAsync(_chn);
 
-            if ( _userone == _usertwo )
                 return;
+            }
 
             _botmsg = await new DiscordMessageBuilder()
                 .WithContent("Esperando o resultado")
@@ -82,11 +85,12 @@ namespace DiscordBot.Commands.Game
             var msgone = await _userone.SendMessageAsync(msg);
             var msgtwo = await _usertwo.SendMessageAsync(msg);
 
-            DiscordEmoji? emjuserone;
-            DiscordEmoji? emjusertwo;
+            var t1 = GetEmojiResult(msgone, _userone);
+            var t2 = GetEmojiResult(msgtwo, _usertwo);
+            await Task.WhenAll(t1, t2);
 
-            emjuserone = await GetEmojiResult(msgone, _userone);
-            emjusertwo = await GetEmojiResult(msgtwo, _usertwo);
+            DiscordEmoji? emjuserone = await t1;
+            DiscordEmoji? emjusertwo = await t2;
 
             if ( emjuserone is null && emjusertwo is null ) { await _botmsg.ModifyAsync("Ninguém reagiu"); return; }
             if ( emjuserone is null && emjusertwo is not null ) { await _botmsg.ModifyAsync($"{_userone.Mention} não reagiu"); return; }
@@ -94,14 +98,22 @@ namespace DiscordBot.Commands.Game
 
             if (emjuserone == _emojis.Scissors && emjusertwo == _emojis.Paper)
                 await _botmsg.ModifyAsync($"{_userone.Mention} venceu! {emjuserone} x {emjusertwo}");
+
             else if (emjuserone == _emojis.Rock && emjusertwo == _emojis.Scissors)
                 await _botmsg.ModifyAsync($"{_userone.Mention} venceu! {emjuserone} x {emjusertwo}");
+
             else if (emjuserone == _emojis.Paper && emjusertwo == _emojis.Rock)
                 await _botmsg.ModifyAsync($"{_userone.Mention} venceu! {emjuserone} x {emjusertwo}");
+
             else if (emjuserone == emjusertwo)
                 await _botmsg.ModifyAsync($"Empatou! {emjuserone} x {emjusertwo}");
+
             else
                 await _botmsg.ModifyAsync($"{_usertwo.Mention} venceu! {emjusertwo} x {emjuserone}");
+
+            // We don't this to flood users DM chat.
+            await msgone.DeleteAsync();
+            await msgtwo.DeleteAsync();
         }
 
         private async Task<DiscordEmoji?> GetEmojiResult(DiscordMessage msg, DiscordMember usr)
