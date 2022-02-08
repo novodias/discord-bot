@@ -40,17 +40,15 @@ namespace DiscordBot.Commands.Game
                 throw new Exception("Something went wrong trying to remove Jokenpo Request from Concurrent Hash Set");
             }
         }
-
-        
     }
 
     public class JokenpoRequest
     {
-        private InteractivityExtension _interactivity;
-        private DiscordMember _userone;
-        private DiscordMember _usertwo;
-        private DiscordChannel _chn;
-        private PaginationEmojis _emojis;
+        private readonly InteractivityExtension _interactivity;
+        private readonly DiscordMember _userone;
+        private readonly DiscordMember _usertwo;
+        private readonly DiscordChannel _chn;
+        private readonly PaginationEmojis _emojis;
         private DiscordMessage? _botmsg;
         public JokenpoRequest(DiscordClient client, IEnumerable<DiscordMember> users, DiscordChannel chn, PaginationEmojis emojis)
         {
@@ -92,28 +90,74 @@ namespace DiscordBot.Commands.Game
             DiscordEmoji? emjuserone = await t1;
             DiscordEmoji? emjusertwo = await t2;
 
-            if ( emjuserone is null && emjusertwo is null ) { await _botmsg.ModifyAsync("Ninguém reagiu"); return; }
-            if ( emjuserone is null && emjusertwo is not null ) { await _botmsg.ModifyAsync($"{_userone.Mention} não reagiu"); return; }
-            if ( emjuserone is not null && emjusertwo is null ) { await _botmsg.ModifyAsync($"{_usertwo.Mention} não reagiu"); return; }
+            bool emjisnull = await CheckEmojiIsNullAsync(emjuserone, emjusertwo);
+            
+            switch ( emjisnull )
+            {
+                case true:
+                    // Just goes to default to delete the DM messages.
+                    goto default;
 
-            if (emjuserone == _emojis.Scissors && emjusertwo == _emojis.Paper)
-                await _botmsg.ModifyAsync($"{_userone.Mention} venceu! {emjuserone} x {emjusertwo}");
+                case false:
+                    await CheckWinnerAsync(emjuserone, emjusertwo);
+                    goto default;
 
-            else if (emjuserone == _emojis.Rock && emjusertwo == _emojis.Scissors)
-                await _botmsg.ModifyAsync($"{_userone.Mention} venceu! {emjuserone} x {emjusertwo}");
+                default:
+                    await DeletePrivateMessagesAsync(msgone, msgtwo);
+                break;
+            }
+        }
 
-            else if (emjuserone == _emojis.Paper && emjusertwo == _emojis.Rock)
-                await _botmsg.ModifyAsync($"{_userone.Mention} venceu! {emjuserone} x {emjusertwo}");
+        private async Task CheckWinnerAsync(DiscordEmoji? emj, DiscordEmoji? emjsecond)
+        {
+            if (this._botmsg is null) { throw new Exception("Jokenpo -> _botmsg is null at Jokenpo.cs"); }
 
-            else if (emjuserone == emjusertwo)
-                await _botmsg.ModifyAsync($"Empatou! {emjuserone} x {emjusertwo}");
+            if (emj == _emojis.Scissors && emjsecond == _emojis.Paper)
+                await this._botmsg.ModifyAsync($"{_userone.Mention} venceu! {emj} x {emjsecond}");
+
+            else if (emj == _emojis.Rock && emjsecond == _emojis.Scissors)
+                await this._botmsg.ModifyAsync($"{_userone.Mention} venceu! {emj} x {emjsecond}");
+
+            else if (emj == _emojis.Paper && emjsecond == _emojis.Rock)
+                await this._botmsg.ModifyAsync($"{_userone.Mention} venceu! {emj} x {emjsecond}");
+
+            else if (emj == emjsecond)
+                await this._botmsg.ModifyAsync($"Empatou! {emj} x {emjsecond}");
 
             else
-                await _botmsg.ModifyAsync($"{_usertwo.Mention} venceu! {emjusertwo} x {emjuserone}");
+                await this._botmsg.ModifyAsync($"{_usertwo.Mention} venceu! {emjsecond} x {emj}");
+        }
 
-            // We don't this to flood users DM chat.
-            await msgone.DeleteAsync();
-            await msgtwo.DeleteAsync();
+        private async Task<bool> CheckEmojiIsNullAsync(DiscordEmoji? emj, DiscordEmoji? emjsecond)
+        {
+            if (this._botmsg is null) { throw new Exception("Jokenpo -> _botmsg is null at Jokenpo.cs"); }
+
+            if ( emj is null && emjsecond is null ) 
+            { 
+                await this._botmsg.ModifyAsync("Ninguém reagiu"); 
+                return true; 
+            }
+            else if ( emj is null && emjsecond is not null ) 
+            { 
+                await this._botmsg.ModifyAsync($"{this._userone.Mention} não reagiu"); 
+                return true; 
+            }
+            else if ( emj is not null && emjsecond is null ) 
+            { 
+                await this._botmsg.ModifyAsync($"{this._usertwo.Mention} não reagiu"); 
+                return true; 
+            }
+            else return false;
+        }
+
+        private async static Task DeletePrivateMessagesAsync(DiscordMessage msg, DiscordMessage msgsecond)
+        {
+            // Avoids rate limit
+            await Task.Delay(TimeSpan.FromSeconds(5));
+
+            // Do this to not flood users DM chat.
+            await msg.DeleteAsync();
+            await msgsecond.DeleteAsync();
         }
 
         private async Task<DiscordEmoji?> GetEmojiResult(DiscordMessage msg, DiscordMember usr)
@@ -134,7 +178,6 @@ namespace DiscordBot.Commands.Game
 
             return null;
         }
-
 
     }
 
