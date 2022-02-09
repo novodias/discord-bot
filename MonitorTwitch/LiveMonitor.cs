@@ -1,10 +1,8 @@
 using DiscordBot.Interactivity.TwitchEvent;
 using DSharpPlus;
-using DSharpPlus.Entities;
 using TwitchLib.Api;
 using Microsoft.Extensions.Logging;
 using TwitchLib.Api.Services;
-using TwitchLib.Api.Services.Events;
 using TwitchLib.Api.Services.Events.LiveStreamMonitor;
 using Newtonsoft.Json;
 

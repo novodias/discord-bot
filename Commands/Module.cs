@@ -4,6 +4,7 @@ using SixLabors.ImageSharp.Processing;
 using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus;
 
 namespace DiscordBot.Commands
 {
@@ -86,24 +87,42 @@ namespace DiscordBot.Commands
             }
         }
 
-        [Command("nice")]
-        public async Task NiceCommand(CommandContext ctx, DiscordMember user)
-        {
-            var date = new TimeSpan(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).GetHashCode();
-            var id = user.Id.GetHashCode();
+        // [Command("nice")]
+        // public async Task NiceCommand(CommandContext ctx, DiscordMember user)
+        // {
+        //     var date = new TimeSpan(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).GetHashCode();
+        //     var id = user.Id.GetHashCode();
 
-            date = Math.Abs(date);
-            id = Math.Abs(id);
+        //     date = Math.Abs(date) / 10000;
+        //     id = Math.Abs(id) / 10000;
             
-            var rnd = new Random(date + id);
+        //     var rnd = new Random(date + id);
 
-            int value = rnd.Next(10, 101);
-            value = Convert.ToByte(Math.Round(Convert.ToDouble(value /= 10)));
+        //     int value = rnd.Next(10, 101);
+        //     value = Convert.ToByte(Math.Round(Convert.ToDouble(value /= 10)));
 
-            var m = new DiscordMessageBuilder()
-                .WithContent($"date: {date} / id: {id} / value: {value}");
+        //     var m = new DiscordMessageBuilder()
+        //         .WithContent($"date(hashcode) e id dividos por 10000\ndate: {date} / id: {id} / value: {value}");
 
-            await m.SendAsync(ctx.Channel);
-        }
+        //     await m.SendAsync(ctx.Channel);
+        // }
+
+        // [Command("buttons")]
+        // public async Task ButtonsCommand(CommandContext ctx)
+        // {
+        //     var buttonlst = new List<DiscordButtonComponent>() 
+        //     {
+        //         new DiscordButtonComponent(ButtonStyle.Primary, "01", "Primeiro", false ),
+        //         new DiscordButtonComponent(ButtonStyle.Secondary, "02", "Segundo", false ),
+        //         new DiscordButtonComponent(ButtonStyle.Success, "03", "Terceiro", false ),
+        //         new DiscordButtonComponent(ButtonStyle.Danger, "04", "Quarto", false )
+        //     };
+
+        //     var builder = new DiscordMessageBuilder()
+        //         .WithContent("Botões")
+        //         .AddComponents(buttonlst);
+
+        //     await builder.SendAsync(ctx.Channel);
+        // }
     }
 }
