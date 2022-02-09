@@ -85,5 +85,25 @@ namespace DiscordBot.Commands
                 }
             }
         }
+
+        [Command("nice")]
+        public async Task NiceCommand(CommandContext ctx, DiscordMember user)
+        {
+            var date = new TimeSpan(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).GetHashCode();
+            var id = user.Id.GetHashCode();
+
+            date = Math.Abs(date);
+            id = Math.Abs(id);
+            
+            var rnd = new Random(date + id);
+
+            int value = rnd.Next(10, 101);
+            value = Convert.ToByte(Math.Round(Convert.ToDouble(value /= 10)));
+
+            var m = new DiscordMessageBuilder()
+                .WithContent($"date: {date} / id: {id} / value: {value}");
+
+            await m.SendAsync(ctx.Channel);
+        }
     }
 }

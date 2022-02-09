@@ -70,6 +70,7 @@ class Program
         this.Commands.RegisterCommands<DiscordBot.Commands.Embed.Twitch.ModuleTwitch>();
         this.Commands.RegisterCommands<DiscordBot.Commands.Embed.Twitter.ModuleTwitter>();
         this.Commands.RegisterCommands<DiscordBot.Commands.Game.ModuleJokenpo>();
+        this.Commands.RegisterCommands<DiscordBot.Commands.Game.ModuleTrivia>();
 
         this.api = new();
 
@@ -87,50 +88,50 @@ class Program
 
         // --------------------------------------------------------------
 
-        if (!File.Exists("files/channels.json"))
-        {
-            var chns = new TwitchChannels();
+        // if (!File.Exists("files/channels.json"))
+        // {
+        //     var chns = new TwitchChannels();
 
-            chns.Channels.Add("twitch");
+        //     chns.Channels.Add("twitch");
 
-            strJson = JsonConvert.SerializeObject(chns);
+        //     strJson = JsonConvert.SerializeObject(chns);
 
-            using ( var fs = File.Open("files/channels.json", FileMode.OpenOrCreate, FileAccess.ReadWrite))
-            {
-                using ( var sw = new StreamWriter(fs, new System.Text.UTF8Encoding(false) ) )
-                {
-                    await sw.WriteLineAsync(strJson);
-                    await sw.DisposeAsync();
-                    fs.Dispose();
-                    fs.Close();
-                }
-            }
+        //     using ( var fs = File.Open("files/channels.json", FileMode.OpenOrCreate, FileAccess.ReadWrite))
+        //     {
+        //         using ( var sw = new StreamWriter(fs, new System.Text.UTF8Encoding(false) ) )
+        //         {
+        //             await sw.WriteLineAsync(strJson);
+        //             await sw.DisposeAsync();
+        //             fs.Dispose();
+        //             fs.Close();
+        //         }
+        //     }
 
-            this.live = new LiveMonitor(this.Client, api, chns.Channels);
-        }
-        else
-        {
-            using ( var fs = File.Open("files/channels.json", FileMode.Open, FileAccess.Read))
-            {
-                using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
-                {
-                    strJson = sr.ReadToEnd();
+        //     this.live = new LiveMonitor(this.Client, api, chns.Channels);
+        // }
+        // else
+        // {
+        //     using ( var fs = File.Open("files/channels.json", FileMode.Open, FileAccess.Read))
+        //     {
+        //         using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
+        //         {
+        //             strJson = sr.ReadToEnd();
 
-                    sr.Dispose();
-                    fs.Dispose();
-                    fs.Close();
-                }
-            }
+        //             sr.Dispose();
+        //             fs.Dispose();
+        //             fs.Close();
+        //         }
+        //     }
 
-            var list = JsonConvert.DeserializeObject<TwitchChannels>(strJson);
+        //     var list = JsonConvert.DeserializeObject<TwitchChannels>(strJson);
 
-            if (list is null)
-            {
-                list = new();
-            }
+        //     if (list is null)
+        //     {
+        //         list = new();
+        //     }
 
-            this.live = new LiveMonitor(this.Client, api, list.Channels);
-        }
+        //     this.live = new LiveMonitor(this.Client, api, list.Channels);
+        // }
 
         await this.Client.ConnectAsync();
         await Task.Delay(-1);

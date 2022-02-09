@@ -29,7 +29,15 @@ namespace DiscordBot.Commands.Game
             var request = new JokenpoRequest(this._client, users, chn, emojis);
 
             _requests.Add(request);
-            await _requests.Single(x => x == request).Setup();
+
+            try
+            {
+                await _requests.Single(x => x == request).Setup();
+            }
+            catch (Exception ex)
+            {
+                this._client.Logger.LogError(LoggerEvents.Misc, ex, "JokenpoRequest got a error while setting up");
+            }
             
             try
             {
@@ -74,7 +82,7 @@ namespace DiscordBot.Commands.Game
             }
 
             _botmsg = await new DiscordMessageBuilder()
-                .WithContent("Esperando o resultado")
+                .WithContent("Esperando o resultado...")
                 .SendAsync(_chn);
             
             var msg = new DiscordMessageBuilder()
