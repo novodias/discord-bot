@@ -65,59 +65,151 @@ namespace DiscordBot.Commands.Game
         {
             if (this._client is null) { throw new Exception("Trivia -> client cannot be null at Trivia.cs"); }
 
-            var request = new TriviaRequest(chn);
+            var request = new TriviaRequest(chn, TimeSpan.FromSeconds(15));
             this._requests.Add(request);
             
             try
             {
+                var tcs = await request.GetTaskCompletionSourceAsync().ConfigureAwait(false);
                 await this._requests.Single(x => x == request).Setup();
+                
+                await tcs.Task.ConfigureAwait(false);
             }
             catch (System.Exception ex)
             {
                 this._client.Logger.LogError(LoggerEvents.Misc, ex, "TriviaRequest got a error while setting up");
+            }
+            finally
+            {
+                // If the trivia got an interaction, it should be removed,
+                // otherwise will be removed here.
+                this._requests.TryRemove(request);
+                this._client.Logger.LogDebug(LoggerEvents.Misc, "request removed");
             }
         }
     }
 
     public class TriviaRequest
     {
+        private TaskCompletionSource<bool> _tcs;
+        private readonly CancellationTokenSource _ct;
         private readonly DiscordChannel _chn;
         private DiscordMessage? _botmsg;
+        private readonly TimeSpan _timeout;
         private string? _trueanswer;
-        public TriviaRequest(DiscordChannel chn)
+
+        public TriviaRequest(DiscordChannel chn, TimeSpan timeout)
         {
+            this._tcs = new();
+            this._ct = new(timeout);
+            this._ct.Token.Register( () => this._tcs.TrySetResult(true));
+            this._timeout = timeout;
+
             this._chn = chn;
         }
 
         public async Task Setup()
         {
-            var json = string.Empty;
-            using (var fsd = File.OpenRead("files/trivia.json"))
-            using (var sr = new StreamReader(fsd, new System.Text.UTF8Encoding(false)))
-                json = await sr.ReadToEndAsync();
+            string result;
 
-            var trivia = JsonConvert.DeserializeObject<TriviaRoot>(json);
+            using (var http = new HttpClient())
+            {
+                using (var response = await http.GetAsync("https://opentdb.com/api.php?amount=1&type=multiple"))
+                {
+                    response.EnsureSuccessStatusCode();
+
+                    var contentresponse = await response.Content.ReadAsStreamAsync();
+
+                    result = await new StreamReader(contentresponse).ReadToEndAsync();
+                }
+            }
+
+            var trivia = JsonConvert.DeserializeObject<OpenTDB>(result);
+            var content = trivia.Results.Single();
+            content = Decode(trivia);
             var rnd = new Random();
 
-            var selected = trivia.Trivia.ElementAt(rnd.Next(0, trivia.Trivia.Count));
             int[] array = Enumerable.Range(0, 4).OrderBy(x => rnd.Next()).Take(4).ToArray();
-            
+            var questions = new List<string>();
+
+            questions.AddRange(content.IncorrectAnswers);
+            questions.Add(content.CorrectAnswer);
 
             var buttonlst = new List<DiscordButtonComponent>() 
             {
-                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_01", selected.Answers.ElementAt(array[0]), false ),
-                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_02", selected.Answers.ElementAt(array[1]), false ),
-                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_03", selected.Answers.ElementAt(array[2]), false ),
-                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_04", selected.Answers.ElementAt(array[3]), false )
+                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_01", questions.ElementAt(array[0]), false ),
+                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_02", questions.ElementAt(array[1]), false ),
+                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_03", questions.ElementAt(array[2]), false ),
+                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_04", questions.ElementAt(array[3]), false )
             };
 
-            this._trueanswer = buttonlst.Single(x => x.Label == selected.Answer).CustomId;
+            this._trueanswer = buttonlst.Single(x => x.Label == content.CorrectAnswer).CustomId;
+
+            DiscordColor color;
+            string difficulty;
+
+            switch (content.Difficulty.ToLower())
+            {
+                case "easy":
+                    color = DiscordColor.Green;
+                    difficulty = "Easy";
+                break;
+                case "medium":
+                    color = DiscordColor.Orange;
+                    difficulty = "Medium";
+                break;
+                case "hard":
+                    color = DiscordColor.Red;
+                    difficulty = "Hard";
+                break;
+
+                default:
+                    color = DiscordColor.White;
+                    difficulty = "Unknown";
+                break;
+            }
+
+            var author = new DiscordEmbedBuilder.EmbedAuthor()
+            {
+                Name = "OpenTDB",
+                Url = "https://opentdb.com/"
+            };
+
+            var footer = new DiscordEmbedBuilder.EmbedFooter()
+            {
+                Text = "15 seconds to answer the question!"
+            };
+
+            var embed = new DiscordEmbedBuilder()
+            {
+                Author = author,
+                Title = content.Question,
+                Color = color,
+                Description = $"Difficulty: `{difficulty}` | Category: `{content.Category}`",
+                Footer = footer
+            };
             
             var builder = new DiscordMessageBuilder()
-                .WithContent(selected.Question)
+                .WithEmbed(embed)
                 .AddComponents(buttonlst);
 
             this._botmsg = await builder.SendAsync(_chn);
+        }
+
+        private static TriviaJson Decode(OpenTDB content)
+        {
+            var trivia = content.Results.Single();
+
+            trivia.CorrectAnswer = System.Web.HttpUtility.HtmlDecode(trivia.CorrectAnswer);
+            List<string> temp = new();
+            foreach (var i in trivia.IncorrectAnswers)
+            {
+                temp.Add(System.Web.HttpUtility.HtmlDecode(i));
+            }
+            trivia.IncorrectAnswers = temp;
+            trivia.Question = System.Web.HttpUtility.HtmlDecode(trivia.Question);
+            
+            return trivia;
         }
 
         public async Task<DiscordMessage?> GetMessageAsync()
@@ -133,23 +225,55 @@ namespace DiscordBot.Commands.Game
 
             return this._trueanswer;
         }
+
+        public async Task<TaskCompletionSource<bool>> GetTaskCompletionSourceAsync()
+        {
+            await Task.Yield();
+
+            return this._tcs;
+        }
+
+        ~TriviaRequest()
+        {
+            this.Dispose();
+        }
+
+        public void Dispose()
+        {
+            this._ct.Dispose();
+            this._tcs = null;
+            this._botmsg = null;
+            this._trueanswer = null;
+        }
     }
 
-    public struct TriviaRoot
+    public struct OpenTDB
     {
-        [JsonProperty("trivia")]
-        public List<TriviaJson> Trivia;
+        [JsonProperty("response_code")]
+        public int ResponseCode;
+
+        [JsonProperty("results")]
+        public IEnumerable<TriviaJson> Results;
     }
     
     public struct TriviaJson
     {
+        [JsonProperty("category")]
+        public string Category;
+
+        [JsonProperty("type")]
+        public string Type;
+
+        [JsonProperty("difficulty")]
+        public string Difficulty;
+
         [JsonProperty("question")]
         public string Question;
 
-        [JsonProperty("answers")]
-        public List<string> Answers;
+        [JsonProperty("correct_answer")]
+        public string CorrectAnswer;
 
-        [JsonProperty("trueanswer")]
-        public string Answer;
+        [JsonProperty("incorrect_answers")]
+        public IEnumerable<string> IncorrectAnswers;
     }
 }
