@@ -84,7 +84,7 @@ namespace DiscordBot.Commands.Game
                 // If the trivia got an interaction, it should be removed,
                 // otherwise will be removed here.
                 this._requests.TryRemove(request);
-                this._client.Logger.LogDebug(LoggerEvents.Misc, "request removed");
+                this._client.Logger.LogDebug(LoggerEvents.Misc, "Trivia Request removed");
             }
         }
     }
