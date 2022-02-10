@@ -1,5 +1,6 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DiscordBot.Interactivity.Games;
 
 namespace DiscordBot.Commands.Game
 {

@@ -1,12 +1,11 @@
 using DSharpPlus;
 using ConcurrentCollections;
-using DSharpPlus.EventArgs;
 using DSharpPlus.Entities;
 using Microsoft.Extensions.Logging;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 
-namespace DiscordBot.Commands.Game
+namespace DiscordBot.Interactivity.Games
 {
     public class Jokenpo
     {
@@ -174,7 +173,7 @@ namespace DiscordBot.Commands.Game
             await msg.CreateReactionAsync(_emojis.Rock);
             await msg.CreateReactionAsync(_emojis.Paper);
 
-            var emojiEvent = await _interactivity.WaitForReactionAsync(msg, usr, TimeSpan.FromSeconds(10));
+            var emojiEvent = await _interactivity.WaitForReactionAsync(msg, usr, TimeSpan.FromSeconds(15));
 
             while (!emojiEvent.TimedOut)
             {

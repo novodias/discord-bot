@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 using ConcurrentCollections;
 using Microsoft.Extensions.Logging;
 
-namespace DiscordBot.Commands.Game
+namespace DiscordBot.Interactivity.Games
 {
     public class Trivia
     {
@@ -65,7 +65,7 @@ namespace DiscordBot.Commands.Game
         {
             if (this._client is null) { throw new Exception("Trivia -> client cannot be null at Trivia.cs"); }
 
-            var request = new TriviaRequest(chn, TimeSpan.FromSeconds(15));
+            var request = new TriviaRequest(chn, TimeSpan.FromSeconds(30));
             this._requests.Add(request);
             
             try
@@ -137,13 +137,11 @@ namespace DiscordBot.Commands.Game
 
             var buttonlst = new List<DiscordButtonComponent>() 
             {
-                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_01", questions.ElementAt(array[0]), false ),
-                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_02", questions.ElementAt(array[1]), false ),
-                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_03", questions.ElementAt(array[2]), false ),
-                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_04", questions.ElementAt(array[3]), false )
+                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_01", "A", false ),
+                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_02", "B", false ),
+                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_03", "C", false ),
+                new DiscordButtonComponent(ButtonStyle.Secondary, "anwser_04", "D", false )
             };
-
-            this._trueanswer = buttonlst.Single(x => x.Label == content.CorrectAnswer).CustomId;
 
             DiscordColor color;
             string difficulty;
@@ -177,7 +175,7 @@ namespace DiscordBot.Commands.Game
 
             var footer = new DiscordEmbedBuilder.EmbedFooter()
             {
-                Text = "15 seconds to answer the question!"
+                Text = "30 seconds to answer the question!"
             };
 
             var embed = new DiscordEmbedBuilder()
@@ -188,6 +186,13 @@ namespace DiscordBot.Commands.Game
                 Description = $"Difficulty: `{difficulty}` | Category: `{content.Category}`",
                 Footer = footer
             };
+
+            embed.AddField("A.", questions.ElementAt(array[0]), false);
+            embed.AddField("B.", questions.ElementAt(array[1]), false);
+            embed.AddField("C.", questions.ElementAt(array[2]), false);
+            embed.AddField("D.", questions.ElementAt(array[3]), false);
+
+            this._trueanswer = buttonlst.Single(x => x.Label == embed.Fields.Single(x => x.Value == content.CorrectAnswer).Name.First().ToString()).CustomId;
             
             var builder = new DiscordMessageBuilder()
                 .WithEmbed(embed)
