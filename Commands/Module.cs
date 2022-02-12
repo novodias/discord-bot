@@ -5,6 +5,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus;
+using DiscordBot.Interactivity.Games;
 
 namespace DiscordBot.Commands
 {
@@ -84,6 +85,27 @@ namespace DiscordBot.Commands
 
                     imageStream.Dispose();
                 }
+            }
+        }
+
+        private Tictactoe? Tictactoe;
+
+        [Command("tictactoe")]
+        public async Task TictactoeCommand(CommandContext ctx, DiscordUser user)
+        {
+            await ctx.TriggerTypingAsync();
+
+            if ( Tictactoe is null ) { Tictactoe = new(ctx.Client); }
+
+            var users = new List<DiscordUser>() { ctx.User, user };
+
+            try
+            {
+                await Tictactoe.InitializeTask(users, ctx.Channel);
+            }
+            catch (System.Exception ex)
+            {
+                await ctx.RespondAsync(ex.Message + ex.StackTrace);
             }
         }
 
