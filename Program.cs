@@ -19,7 +19,6 @@ class Program
     public CommandsNextExtension? Commands { get; set; }
     public LiveMonitor? live {get; set;}
     public TwitchAPI? api {get; set;}
-    private FileSystemWatcher watcher {get; set;}
     public static void Main()
     {
         var prog = new Program();
@@ -72,8 +71,7 @@ class Program
         this.Commands.RegisterCommands<DiscordBot.Commands.Images.ModuleImages>();
         this.Commands.RegisterCommands<DiscordBot.Commands.Embed.Twitch.ModuleTwitch>();
         this.Commands.RegisterCommands<DiscordBot.Commands.Embed.Twitter.ModuleTwitter>();
-        this.Commands.RegisterCommands<DiscordBot.Commands.Game.ModuleJokenpo>();
-        this.Commands.RegisterCommands<DiscordBot.Commands.Game.ModuleTrivia>();
+        this.Commands.RegisterCommands<DiscordBot.Commands.Games.ModuleGames>();
 
         this.api = new();
 
@@ -88,53 +86,6 @@ class Program
 
         this.api.Settings.ClientId = cfgJson.ClientId;
         this.api.Settings.AccessToken = cfgJson.AccessToken;
-
-        // --------------------------------------------------------------
-
-        // if (!File.Exists("files/channels.json"))
-        // {
-        //     var chns = new TwitchChannels();
-
-        //     chns.Channels.Add("twitch");
-
-        //     strJson = JsonConvert.SerializeObject(chns);
-
-        //     using ( var fs = File.Open("files/channels.json", FileMode.OpenOrCreate, FileAccess.ReadWrite))
-        //     {
-        //         using ( var sw = new StreamWriter(fs, new System.Text.UTF8Encoding(false) ) )
-        //         {
-        //             await sw.WriteLineAsync(strJson);
-        //             await sw.DisposeAsync();
-        //             fs.Dispose();
-        //             fs.Close();
-        //         }
-        //     }
-
-        //     this.live = new LiveMonitor(this.Client, api, chns.Channels);
-        // }
-        // else
-        // {
-        //     using ( var fs = File.Open("files/channels.json", FileMode.Open, FileAccess.Read))
-        //     {
-        //         using ( var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false) ) )
-        //         {
-        //             strJson = sr.ReadToEnd();
-
-        //             sr.Dispose();
-        //             fs.Dispose();
-        //             fs.Close();
-        //         }
-        //     }
-
-        //     var list = JsonConvert.DeserializeObject<TwitchChannels>(strJson);
-
-        //     if (list is null)
-        //     {
-        //         list = new();
-        //     }
-
-        //     this.live = new LiveMonitor(this.Client, api, list.Channels);
-        // }
 
         await this.Client.ConnectAsync();
         await Task.Delay(-1);

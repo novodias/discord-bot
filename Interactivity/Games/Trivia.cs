@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DiscordBot.Interactivity.Games
 {
-    public class Trivia
+    public class Trivia : IGame
     {
         readonly DiscordClient _client;
         readonly ConcurrentHashSet<TriviaRequest> _requests;
@@ -61,9 +61,11 @@ namespace DiscordBot.Interactivity.Games
             return Task.CompletedTask;
         }
 
-        public async Task InitializeTask(DiscordChannel chn)
+        public async Task InitializeTask(params object[] args)
         {
             if (this._client is null) { throw new Exception("Trivia -> client cannot be null at Trivia.cs"); }
+
+            var chn = (DiscordChannel)args[0];
 
             var request = new TriviaRequest(chn, TimeSpan.FromSeconds(30));
             this._requests.Add(request);
@@ -246,7 +248,7 @@ namespace DiscordBot.Interactivity.Games
         public void Dispose()
         {
             this._ct.Dispose();
-            this._tcs = null;
+            // this._tcs = null;
             this._botmsg = null;
             this._trueanswer = null;
         }

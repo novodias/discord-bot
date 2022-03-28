@@ -6,11 +6,11 @@ using DSharpPlus.EventArgs;
 
 namespace DiscordBot.Interactivity.Games
 {
-    public class Tictactoe
+    public class Tictactoe : IGame
     {
         readonly DiscordClient _client;
         readonly ConcurrentHashSet<TictactoeRequest> _requests;
-        public Tictactoe(DiscordClient client)
+        public Tictactoe(DiscordClient client) : base()
         {
             this._client = client;
             this._requests = new ConcurrentHashSet<TictactoeRequest>();
@@ -189,60 +189,33 @@ namespace DiscordBot.Interactivity.Games
             // else if (GetColumn(board, 2) == preset03)
             //     return true;
 
-            if (GetRow(board, 0).All(x => x == $"{emj}"))
+            if (GetRow(board, 0).All(x => x == emj.GetDiscordName()))
                 return true;
-            if (GetRow(board, 1).All(x => x == $"{emj}"))
+            else if (GetRow(board, 1).All(x => x == emj.GetDiscordName()))
                 return true;
-            if (GetRow(board, 2).All(x => x == $"{emj}"))
+            else if (GetRow(board, 2).All(x => x == emj.GetDiscordName()))
                 return true;
-            if (GetColumn(board, 0).All(x => x == $"{emj}"))
+            else if (GetColumn(board, 0).All(x => x == emj.GetDiscordName()))
                 return true;
-            if (GetColumn(board, 1).All(x => x == $"{emj}"))
+            else if (GetColumn(board, 1).All(x => x == emj.GetDiscordName()))
                 return true;
-            if (GetColumn(board, 2).All(x => x == $"{emj}"))
+            else if (GetColumn(board, 2).All(x => x == emj.GetDiscordName()))
                 return true;
-            else if (board[0,0] == emj && board[1,1] == emj && board[2,2] == emj)
+            else if (board[0,0] == emj.GetDiscordName() && board[1,1] == emj.GetDiscordName() && board[2,2] == emj.GetDiscordName())
                 return true;
-            else if (board[0,2] == emj && board[1,1] == emj && board[2,0] == emj)
+            else if (board[0,2] == emj.GetDiscordName() && board[1,1] == emj.GetDiscordName() && board[2,0] == emj.GetDiscordName())
                 return true;
-            else return false;
+            else 
+                return false;
         }
 
-        // private static string GetStringFromArray(string[,] input)
-        // {
-        //     string output = string.Empty;
-
-        //     int row = 0;
-        //     int column = 0;
-        //     for (int i = 0; i < 9; i++)
-        //     {
-        //         switch(i)
-        //         {
-        //             case 2:
-        //             case 5:
-        //                 row++;
-        //             goto default;
-
-        //             default:
-        //                 if (i == 2 || i == 5)
-        //                 {
-        //                     output += input[row, column];
-        //                     column = 0;
-        //                 }
-        //                 else
-        //                 {
-        //                     output += input[row, column];
-        //                     column++;
-        //                 }
-        //             break;
-        //         }
-        //     }
-
-        //     return output;
-        // }
-
-        public async Task InitializeTask(IEnumerable<DiscordUser> users, DiscordChannel chn)
+        public async Task InitializeTask(params object[] args)
         {
+            var userone = (DiscordUser)args[0];
+            var usertwo = (DiscordUser)args[1];
+            var chn = (DiscordChannel)args[2];
+            
+            List<DiscordUser> users = new() { userone, usertwo };
             var request = await CreateRequest(users, chn);
 
             this._requests.Add(request);
@@ -266,8 +239,6 @@ namespace DiscordBot.Interactivity.Games
         {
             var emojis = new TicTacToeEmojis();
             var emj = emojis.BlackSquare;
-
-
 
             string[,] board = 
             { 
@@ -302,7 +273,7 @@ namespace DiscordBot.Interactivity.Games
             await m.CreateReactionAsync(emojis.Nine);
 
             await Task.Delay(TimeSpan.FromSeconds(1));
-            
+
             return new TictactoeRequest(m, users, board, emojis, TimeSpan.FromSeconds(120));
         }
     }
@@ -381,7 +352,7 @@ namespace DiscordBot.Interactivity.Games
         public void Dispose()
         {
             this._ct.Dispose();
-            this._tcs = null;
+            // this._tcs = null;
         }
     }
 

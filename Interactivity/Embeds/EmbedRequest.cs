@@ -92,7 +92,7 @@ namespace DiscordBot.Interactivity.Embeds
         public void Dispose()
         {
             this._ct.Dispose();
-            this._tcs = null; 
+            // this._tcs = null; 
             this._embeds.Clear();
             this._index = 0;
         }

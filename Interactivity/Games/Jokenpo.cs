@@ -7,7 +7,7 @@ using DSharpPlus.Interactivity.Extensions;
 
 namespace DiscordBot.Interactivity.Games
 {
-    public class Jokenpo
+    public class Jokenpo : IGame
     {
         readonly DiscordClient _client;
         readonly ConcurrentHashSet<JokenpoRequest> _requests;
@@ -17,12 +17,15 @@ namespace DiscordBot.Interactivity.Games
             this._requests = new();
         }
 
-        public async Task InitializeTask(DiscordMember user, DiscordMember usersecond, DiscordChannel chn)
+        public async Task InitializeTask(params object[] args)
         {
             if (this._client is null) { throw new Exception("Jokenpo -> client cannot be null at Jokenpo.cs"); }
 
-            var emojis = new PaginationEmojis();
+            var user = (DiscordMember)args[0];
+            var usersecond = (DiscordMember)args[1];
+            var chn = (DiscordChannel)args[2];
 
+            var emojis = new PaginationEmojis();
             var users = new List<DiscordMember>(2) { user, usersecond };
 
             var request = new JokenpoRequest(this._client, users, chn, emojis);
