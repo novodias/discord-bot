@@ -15,8 +15,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta13" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.0" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta14" />
     <PackageReference Include="TweetinviAPI" Version="5.0.4" />
     <PackageReference Include="TwitchLib" Version="3.3.0" />
   </ItemGroup>

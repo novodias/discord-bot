@@ -17,8 +17,8 @@ class Program
     public DiscordClient? Client { get; set; }
     public InteractivityExtension? Interactivity { get; set; }
     public CommandsNextExtension? Commands { get; set; }
-    public LiveMonitor? live {get; set;}
-    public TwitchAPI? api {get; set;}
+    public LiveMonitor? Live {get; set;}
+    public TwitchAPI? Api {get; set;}
     public static void Main()
     {
         var prog = new Program();
@@ -73,7 +73,7 @@ class Program
         this.Commands.RegisterCommands<DiscordBot.Commands.Embed.Twitter.ModuleTwitter>();
         this.Commands.RegisterCommands<DiscordBot.Commands.Games.ModuleGames>();
 
-        this.api = new();
+        this.Api = new();
 
         var strJson = string.Empty;
         using ( var fst = File.OpenRead("files/twitchkeys.json") )
@@ -84,11 +84,82 @@ class Program
 
         var cfgJson = JsonConvert.DeserializeObject<TwitchJson>(strJson);
 
-        this.api.Settings.ClientId = cfgJson.ClientId;
-        this.api.Settings.AccessToken = cfgJson.AccessToken;
+        this.Api.Settings.ClientId = cfgJson.ClientId;
+        this.Api.Settings.AccessToken = cfgJson.AccessToken;
+
+        this.Client.MessageCreated += this.MessageCreated;
+
+        // this.Live = await GetMonitor(this.Client, this.api, strJson);
 
         await this.Client.ConnectAsync();
         await Task.Delay(-1);
+    }
+
+    private async Task<LiveMonitor> GetMonitor(DiscordClient sender, TwitchAPI api, string strJson)
+    {
+        if (!File.Exists("files/channels.json"))
+        {
+            var chns = new TwitchChannels();
+
+            chns.Channels.Add("twitch");
+
+            strJson = JsonConvert.SerializeObject(chns);
+
+            using ( var fs = File.Open("files/channels.json", FileMode.OpenOrCreate, FileAccess.ReadWrite))
+            {
+                using var sw = new StreamWriter(fs, new System.Text.UTF8Encoding(false));
+                await sw.WriteLineAsync(strJson);
+
+                await sw.DisposeAsync();
+                fs.Dispose();
+                fs.Close();
+            }
+
+            return new LiveMonitor(sender, api, chns.Channels);
+        }
+        else
+        {
+            using ( var fs = File.Open("files/channels.json", FileMode.Open, FileAccess.Read))
+            {
+                using var sr = new StreamReader(fs, new System.Text.UTF8Encoding(false));
+                strJson = sr.ReadToEnd();
+
+                sr.Dispose();
+                fs.Dispose();
+                fs.Close();
+            }
+
+            var list = JsonConvert.DeserializeObject<TwitchChannels>(strJson);
+
+            if ( list is null )
+                list = new();
+
+            return new LiveMonitor(sender, api, list.Channels);
+        }
+    }
+
+    private async Task MessageCreated(DiscordClient sender, MessageCreateEventArgs m)
+    {
+        if ( !(m.Guild.Id == 928322355883827241) )
+            return;
+
+        var failembed = m.Message.Content;
+
+        if ( !failembed.Contains("twitter.com") && !failembed.Contains("status") )
+            return;
+
+        if ( failembed.Contains("fxtwitter") )
+            return;
+
+        failembed = "https://" + "fx" + failembed[(failembed.IndexOf("https://") + 8)..];
+
+        var builder = new DSharpPlus.Entities.DiscordMessageBuilder()
+            .WithContent(failembed)
+            .WithReply(m.Message.Id);
+
+        await sender.SendMessageAsync(m.Channel, builder);
+
+        return;
     }
 
     private Task Client_Ready(DiscordClient sender, ReadyEventArgs e)

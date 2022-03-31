@@ -1,6 +1,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Processing;
@@ -50,42 +51,34 @@ namespace DiscordBot.Commands.Images
                         try
                         {
                             image.Mutate( x => x.Resize( new ResizeOptions
-                                {
-                                    Mode = ResizeMode.Max,
-                                    Size = new Size(512, 512),
-                                    Compand = true
-                                }));
+                            {
+                                Mode = ResizeMode.Max,
+                                Size = new Size(512, 512),
+                                Compand = true
+                            }));
 
-                            var fontf = SixLabors.Fonts.SystemFonts.Find("ubuntu");
+                            var fontf = SixLabors.Fonts.SystemFonts.Get("ubuntu");
                             var fontb = new SixLabors.Fonts.Font(fontf, 6f, SixLabors.Fonts.FontStyle.Bold);
 
-                            var optionstop = new DrawingOptions() 
+                            TextOptions optionstop = new(fontb) 
                             {
-                                TextOptions = new TextOptions()
-                                {
-                                    VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Top,
-                                    HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center,
-                                    WrapTextWidth = image.Width,
-                                    DpiX = image.Width,
-                                    DpiY = image.Height,
-                                }
-
+                                VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Top,
+                                HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center,
+                                WrappingLength = image.Width,
+                                Dpi = image.Width,
+                                Origin = new PointF(0 ,0)
                             };
 
-                            var optionsbot = new DrawingOptions() 
+                            TextOptions optionsbot = new(fontb) 
                             {
-                                TextOptions = new TextOptions()
-                                {
-                                    VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Top,
-                                    HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center,
-                                    WrapTextWidth = image.Width,
-                                    DpiX = image.Width,
-                                    DpiY = image.Height,
-                                }
-
+                                VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Top,
+                                HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center,
+                                WrappingLength = image.Width,
+                                Dpi = image.Width,
+                                Origin = new PointF(0 ,0)
                             };
                             
-                            var stringSize = SixLabors.Fonts.TextMeasurer.Measure(msgOutput, new SixLabors.Fonts.RendererOptions(fontb));
+                            var stringSize = SixLabors.Fonts.TextMeasurer.Measure(msgOutput, optionsbot);
 
                             int bottom = image.Height - image.Height / 8;
                             
@@ -94,28 +87,22 @@ namespace DiscordBot.Commands.Images
                                 image.Mutate( x => x.DrawText(
                                 optionstop,
                                 msgOutput,
-                                fontb,
                                 Brushes.Solid(Color.White),
-                                Pens.Solid(Color.Black, 2f),
-                                new PointF( 0, 0 ) ) );
+                                Pens.Solid(Color.Black, 2f)));
                             }
                             else
                             {
                                 image.Mutate( x => x.DrawText(
                                     optionstop,
                                     msgOutputArr.First(),
-                                    fontb,
                                     Brushes.Solid(Color.White),
-                                    Pens.Solid(Color.Black, 2f),
-                                    new PointF( 0, 0 ) ) );
+                                    Pens.Solid(Color.Black, 2f)));
 
                                 image.Mutate( x => x.DrawText(
                                     optionsbot,
                                     msgOutputArr.Last(),
-                                    fontb,
                                     Brushes.Solid(Color.White),
-                                    Pens.Solid(Color.Black, 2f),
-                                    new PointF( 0, bottom ) ) );
+                                    Pens.Solid(Color.Black, 2f)));
                             }
 
                             // memeImage.Dispose();
@@ -139,7 +126,7 @@ namespace DiscordBot.Commands.Images
                         }
                         catch (Exception ex)
                         {
-                            await ctx.RespondAsync(ex.Message);
+                            await ctx.RespondAsync(ex.Message + ex.StackTrace);
                         }
                     }
                 }

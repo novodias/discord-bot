@@ -1,5 +1,6 @@
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Formats.Gif;
 using SixLabors.ImageSharp.PixelFormats;
@@ -10,11 +11,11 @@ namespace DiscordBot.Commands.Gifs
 {
     public class Gif
     {
-        private readonly FontFamily UbuntuFont = SystemFonts.Find("ubuntu");
+        private readonly FontFamily UbuntuFont = SystemFonts.Get("ubuntu");
         private const long MaxBytes = 8 * 1024 * 1024;
         private readonly Image Image;
         private readonly Font Font;
-        private readonly DrawingOptions Options;
+        private readonly TextOptions Options;
         private readonly string Message;
 
         public Gif( Stream ImageStream, string Message ) 
@@ -24,25 +25,38 @@ namespace DiscordBot.Commands.Gifs
 
             Font = new( UbuntuFont, 18f, FontStyle.Bold );
 
-            Options = new DrawingOptions()
+            float DPI = Convert.ToSingle( 
+                Image.Metadata.HorizontalResolution > Image.Metadata.VerticalResolution ? 
+                Image.Metadata.HorizontalResolution : Image.Metadata.VerticalResolution
+            ); 
+
+            Options = new(Font)
             {
-                TextOptions = new TextOptions()
-                {
-                    VerticalAlignment = VerticalAlignment.Center,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    WrapTextWidth = Image.Width,
-                    DpiX = (float)Image.Metadata.HorizontalResolution,
-                    DpiY = (float)Image.Metadata.VerticalResolution
-                }
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextAlignment = TextAlignment.Center,
+                WrappingLength = Image.Width,
+                Dpi = DPI,
             };
+
+            // Options = new DrawingOptions()
+            // {
+            //     TextOptions = new TextOptions()
+            //     {
+            //         VerticalAlignment = VerticalAlignment.Center,
+            //         HorizontalAlignment = HorizontalAlignment.Center,
+            //         WrapTextWidth = Image.Width,
+            //         DpiX = (float)Image.Metadata.HorizontalResolution,
+            //         DpiY = (float)Image.Metadata.VerticalResolution
+            //     }
+            // };
 
             Image.Metadata.IccProfile = null;
         }
 
         public async Task<Stream> GetImageStream()
         {
-            var StringSize = TextMeasurer.Measure( Message, new RendererOptions( Font, 
-                Options.TextOptions.DpiX, Options.TextOptions.DpiY ) );
+            var StringSize = TextMeasurer.Measure( Message, Options );
 
             int HeightFinal = Convert.ToInt32( StringSize.Height + 64f );
             
@@ -52,11 +66,16 @@ namespace DiscordBot.Commands.Gifs
                 WhiteBar.Metadata.HorizontalResolution = Image.Metadata.HorizontalResolution;
                 WhiteBar.Metadata.VerticalResolution = Image.Metadata.VerticalResolution;
 
-                float scalingFactor = WhiteBar.Height / StringSize.Height;
-                float fontSize = (Font.Size * scalingFactor) / Font.Size;
-                var scaledFont = new Font( UbuntuFont, Font.Size - fontSize, FontStyle.Bold );
+                // float scalingFactor = WhiteBar.Height / StringSize.Height;
+                // float fontSize = (Font.Size * scalingFactor) / Font.Size;
+                // var scaledFont = new Font( UbuntuFont, fontSize + Font.Size, FontStyle.Bold );
 
-                WhiteBar.Mutate( img => img.DrawText( Options, Message, scaledFont, Color.Black, new PointF( 0, HeightFinal / 2 ) ) ); 
+                Options.Origin = new PointF( Image.Width / 2, HeightFinal / 2 );
+
+                var glyphs = TextBuilder.GenerateGlyphs( Message, Options );
+
+                WhiteBar.Mutate( img => img
+                    .Fill(Color.Black, glyphs) ); 
 
                 Image.Mutate( x => x.DrawImage( WhiteBar, 1f ) );
             }
@@ -83,8 +102,6 @@ namespace DiscordBot.Commands.Gifs
             Height = Image.Height >= 512 ?
                 Convert.ToInt32( Image.Height / 1.5 ) : Image.Height;
 
-            Image.Mutate( img => img.Resize(Width, Height) );
-            
             var ImageStream = new MemoryStream();
             await Image.SaveAsGifAsync( ImageStream, encoder );
             
@@ -97,6 +114,13 @@ namespace DiscordBot.Commands.Gifs
                     if ( i % 2 == 0 )
                         Image.Frames.RemoveFrame(i);
                 }
+
+                Image.Mutate( img => img.Resize( new ResizeOptions()
+                {
+                    Size = new Size( Width, Height ),
+                    Mode = ResizeMode.Max,
+                    Compand = true,
+                }));
 
                 await Image.SaveAsGifAsync( ImageStream, encoder );
             }

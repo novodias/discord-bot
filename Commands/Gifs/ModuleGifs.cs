@@ -5,58 +5,59 @@ using SixLabors.ImageSharp.Processing;
 using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using SixLabors.ImageSharp.Formats.Gif;
 
 namespace DiscordBot.Commands.Gifs
 {
     public class ModuleGifs : BaseCommandModule
     {
-        [Command("cesar")]
-        [Cooldown(1, 20, CooldownBucketType.Channel)]
-        public async Task CesarCommand(CommandContext ctx, [RemainingText] string message)
-        {
-            await ctx.TriggerTypingAsync();
+        // [Command("cesar")]
+        // [Cooldown(1, 20, CooldownBucketType.Channel)]
+        // public async Task CesarCommand(CommandContext ctx, [RemainingText] string message)
+        // {
+        //     await ctx.TriggerTypingAsync();
 
-            if (string.IsNullOrEmpty(message)) { await ctx.RespondAsync("O comando não pode ser usado sem uma frase"); return; }
+        //     if (string.IsNullOrEmpty(message)) { await ctx.RespondAsync("O comando não pode ser usado sem uma frase"); return; }
             
-            using (var image = Image.Load("files/gifs/cesarNegocios.gif"))
-            {
-                image.Mutate( x => x.Resize(512, 512) );
-                image.Mutate( x => x.Transform( new AffineTransformBuilder().AppendTranslation( new PointF(0, 86) ) ) );
-                var memeImage = new Image<Rgba32>(512, 86, new Rgba32(255, 255, 255));
-                image.Mutate( x => x.DrawImage(memeImage, 1f));
-                memeImage.Dispose();
+        //     using (var image = Image.Load("files/gifs/cesarNegocios.gif"))
+        //     {
+        //         image.Mutate( x => x.Resize(512, 512) );
+        //         image.Mutate( x => x.Transform( new AffineTransformBuilder().AppendTranslation( new PointF(0, 86) ) ) );
+        //         var memeImage = new Image<Rgba32>(512, 86, new Rgba32(255, 255, 255));
+        //         image.Mutate( x => x.DrawImage(memeImage, 1f));
+        //         memeImage.Dispose();
 
 
-                var fontf = SixLabors.Fonts.SystemFonts.Find("ubuntu");
-                var fontb = new SixLabors.Fonts.Font(fontf, 24f, SixLabors.Fonts.FontStyle.Bold);
-                //var fontw = new SixLabors.Fonts.Font(fontf, 28f, SixLabors.Fonts.FontStyle.Bold);
+        //         var fontf = SixLabors.Fonts.SystemFonts.Get("ubuntu");
+        //         var fontb = new SixLabors.Fonts.Font(fontf, 24f, SixLabors.Fonts.FontStyle.Bold);
+        //         //var fontw = new SixLabors.Fonts.Font(fontf, 28f, SixLabors.Fonts.FontStyle.Bold);
                 
-                var options = new DrawingOptions() 
-                {
-                    TextOptions = new TextOptions()
-                    {
-                        VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Center,
-                        WrapTextWidth = 450,
-                        HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center
-                    }
-                };
+        //         var options = new DrawingOptions() 
+        //         {
+        //             TextOptions = new TextOptions()
+        //             {
+        //                 VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Center,
+        //                 WrapTextWidth = 450,
+        //                 HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center
+        //             }
+        //         };
 
-                image.Mutate( x => x.DrawText(options, message, fontb, Color.Black, new PointF( 32f, 42f )) );
+        //         image.Mutate( x => x.DrawText(options, message, fontb, Color.Black, new PointF( 32f, 42f )) );
 
-                await using (Stream imageStream = new MemoryStream())
-                {
-                    image.SaveAsGif(imageStream);
-                    image.Dispose();
-                    imageStream.Position = 0;
+        //         await using (Stream imageStream = new MemoryStream())
+        //         {
+        //             image.SaveAsGif(imageStream);
+        //             image.Dispose();
+        //             imageStream.Position = 0;
 
-                    var msg = await new DiscordMessageBuilder()
-                        .WithFiles(new Dictionary<string, Stream>() { {"cesarNegocios.gif", imageStream } })
-                        .SendAsync(ctx.Channel);
+        //             var msg = await new DiscordMessageBuilder()
+        //                 .WithFiles(new Dictionary<string, Stream>() { {"cesarNegocios.gif", imageStream } })
+        //                 .SendAsync(ctx.Channel);
 
-                    await imageStream.DisposeAsync();
-                }
-            }
-        }
+        //             await imageStream.DisposeAsync();
+        //         }
+        //     }
+        // }
 
         [Command("gif")]
         [Cooldown(1, 20, CooldownBucketType.Channel)]
@@ -91,118 +92,223 @@ namespace DiscordBot.Commands.Gifs
             }
 
             Gif Image;
-            
+
             using ( var userUrl = new HttpClient() )
             {
                 using var response = await userUrl.GetAsync(urlGif);
                 response.EnsureSuccessStatusCode();
 
-                var Stream = await response.Content.ReadAsStreamAsync();
-                Image = new( Stream, Message );
-            }
+                try
+                {
+                    var Stream = await response.Content.ReadAsStreamAsync();
+                    Image = new( Stream, Message );
+                    await Stream.DisposeAsync();
+                }
+                catch (Exception ex)
+                {
+                    await ctx.RespondAsync( ex.Message );
+                    return;
+                }
 
-            var ImageStream = await Image.GetImageStream();
+                response.Dispose();
+            }
 
             try
             {
+                using var ImageStream = await Image.GetImageStream();
                 ImageStream.Position = 0;
 
                 var msg = await new DiscordMessageBuilder()
-                    .WithFiles( new Dictionary<string, Stream>() { { "meme.gif", ImageStream } } )
-                    .SendAsync( ctx.Channel );
+                    .WithFiles(new Dictionary<string, Stream>() { { "meme.gif", ImageStream } })
+                    .SendAsync(ctx.Channel);
             }
-            catch ( Exception ex )
+            catch (Exception ex)
             {
-                await ctx.RespondAsync( ex.Message + ex.StackTrace );
+                await ctx.RespondAsync( ex.Message );
             }
             finally
             {
-                await ImageStream.DisposeAsync();
                 Image.Dispose();
             }
-
-            // const long bytesToRead = 8 * 1024 * 1024;
-
-            // if (stream.Length > bytesToRead) 
-            // { 
-            //     await ctx.RespondAsync("O gif tem mais que 8mb."); 
-            //     return; 
-            // }
             
-            // var image = Image.Load(stream);
-            // var fontf = SixLabors.Fonts.SystemFonts.Find("ubuntu");
-            // var fontb = new SixLabors.Fonts.Font(fontf, 56f, SixLabors.Fonts.FontStyle.Bold);
+        }
 
-            // var options = new DrawingOptions() 
-            // {
-            //     TextOptions = new TextOptions()
-            //     {
-            //         VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Center,
-            //         WrapTextWidth = image.Width,
-            //         HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center,
-            //     }
+        [Command("pawg")]
+        public async Task PawgCommand(CommandContext ctx, [RemainingText] string linkURL)
+        {
+            await ctx.TriggerTypingAsync();
 
-            // };
+            if ( string.IsNullOrEmpty( linkURL ) && !ctx.Message.Attachments.Any() ) 
+            {
+                await ctx.RespondAsync("O comando não pode ser usado sem um link ou anexo"); 
+                return;
+            }
 
-            // var stringSize = SixLabors.Fonts.TextMeasurer.Measure(message, new SixLabors.Fonts.RendererOptions(fontb));
+            string? attachmentLink = ctx.Message.Attachments[0].Url;
+            string link = ctx.Message.Attachments.Any() ? attachmentLink : linkURL;
 
-            // int HeightFinal = Convert.ToInt32(stringSize.Height + 64f);
+            using var Client = new HttpClient();
+            using var response = await Client.GetAsync( link );
+            response.EnsureSuccessStatusCode();
 
-            // var memeImage = new Image<Rgba32>(image.Width, HeightFinal, new Rgba32(255, 255, 255));
-
-            // var ratioX = (double)stringSize.Width / memeImage.Width;
-            // var ratioY = (double)stringSize.Height / memeImage.Height;
-            // var ratio = Math.Min(ratioX, ratioY);
-
-            // float sizeFont = 56f;
-
-            // var scaledFont = new SixLabors.Fonts.Font( fontf, Convert.ToSingle(ratio) * sizeFont, SixLabors.Fonts.FontStyle.Bold );
+            var Stream = await response.Content.ReadAsStreamAsync();
+            using Image Picture = Image.Load( Stream );
+            await Stream.DisposeAsync();
             
-            // try
-            // {
-            //     image.Mutate( x => x.Transform( new AffineTransformBuilder().AppendTranslation( new PointF(0, HeightFinal) ) ) );
+            response.Dispose();
+            Client.Dispose();
 
-            //     image.Mutate( x => x.DrawImage(memeImage, 1f));
-            //     image.Mutate( x => x.DrawText(
-            //         options, 
-            //         message, 
-            //         scaledFont, 
-            //         Color.Black, 
-            //         new PointF( 0, memeImage.Height / 2f ) ) );
+            try
+            {
 
-            //     if (image.Height > 256 && image.Width > 256)
-            //     {
-            //         image.Mutate( x => x.Resize( new ResizeOptions
-            //         {
-            //             Mode = ResizeMode.Max,
-            //             Size = new Size(image.Width / 2, image.Width / 2),
-            //             Compand = true
-            //         })); 
-            //     }
+                Picture.Mutate(img => img
+                    .Resize(
+                        new ResizeOptions()
+                        {
+                            Size = new Size(100, 100),
+                            Mode = ResizeMode.Max,
+                        }
+                    )
+                );
 
-            //     memeImage.Dispose();
+                DrawingOptions options = new()
+                {
+                    GraphicsOptions = new GraphicsOptions()
+                    {
+                        AlphaCompositionMode = PixelAlphaCompositionMode.SrcIn,
+                        ColorBlendingMode = PixelColorBlendingMode.Darken,
+                    }
+                };
 
-            //     using ( Stream imageStream = new MemoryStream() )
-            //     {
-            //         image.SaveAsGif(imageStream);
-            //         image.Dispose();
-            //         imageStream.Position = 0;
+                var Red = Picture.Clone(red => red
+                    .Fill( options, Color.Red )
+                    .DrawImage( Picture, PixelColorBlendingMode.Darken, 0.8f )
+                );
 
-            //         if (imageStream.Length > bytesToRead) { await ctx.RespondAsync("Infelizmente o gif final tem mais que 8mbs..."); }
-            //         else
-            //         {
-            //             var msg = await new DiscordMessageBuilder()
-            //                 .WithFiles(new Dictionary<string, Stream>() { {"meme.gif", imageStream } })
-            //                 .SendAsync(ctx.Channel);
-            //         }
+                var Blue = Picture.Clone(blue => blue
+                    .Fill( options, new Rgba32(0, 128, 255) )
+                    .DrawImage( Picture, PixelColorBlendingMode.Darken, 0.8f )
+                    .Resize(Convert.ToInt32(Red.Width * 0.8), Convert.ToInt32(Red.Height * 0.8))
+                );
 
-            //         await imageStream.DisposeAsync();
-            //     }
-            // }
-            // catch (Exception ex)
-            // {
-            //     await ctx.RespondAsync(ex.Message);
-            // }
+                Picture.Dispose();
+
+                const int frameDelay = 2;
+                const GifDisposalMethod disposalMethod = GifDisposalMethod.RestoreToBackground;
+
+                using Image Gif = new Image<Rgba32>(150, 150, Color.Transparent);
+                
+                var gifMetaData = Gif.Metadata.GetGifMetadata();
+                gifMetaData.RepeatCount = 0;
+
+                GifFrameMetadata metadata = Gif.Frames.RootFrame.Metadata.GetGifMetadata();
+                metadata.FrameDelay = frameDelay;
+
+                for (int i = 0; i < 8; i++)
+                {
+                    using (var frame = new Image<Rgba32>(150, 150, Color.Transparent))
+                    {
+                        metadata = frame.Frames.RootFrame.Metadata.GetGifMetadata();
+                        metadata.FrameDelay = frameDelay;
+                        metadata.DisposalMethod = disposalMethod;
+
+                        if ( i == 0 )
+                        {
+                            frame.Mutate( img => img
+                                .DrawImage( Red, new Point(10, 10), 1f )
+                                .DrawImage( Blue, new Point(60, 50), 1f ) 
+                            );
+                        }
+
+                        if ( i == 1 )
+                        {
+                            frame.Mutate( img => img
+                                .DrawImage( Red, new Point(14, 14), 1f )
+                                .DrawImage( Blue, new Point(56, 48), 1f ) 
+                            );
+                        }
+
+                        if ( i == 2 )
+                        {
+                            frame.Mutate( img => img
+                                .DrawImage( Red, new Point(16, 16), 1f )
+                                .DrawImage( Blue, new Point(54, 47), 1f ) 
+                            );
+                        }
+                        
+                        if ( i == 3 )
+                        {
+                            frame.Mutate( img => img
+                                .DrawImage( Red, new Point(20, 20), 1f )
+                                .DrawImage( Blue, new Point(50, 45), 1f ) 
+                            );
+                        }
+
+                        if ( i == 4 )
+                        {
+                            frame.Mutate( img => img
+                                .DrawImage( Red, new Point(17, 17), 1f )
+                                .DrawImage( Blue, new Point(53, 47), 1f ) 
+                            );
+                        }
+
+                        if ( i == 5 )
+                        {
+                            frame.Mutate( img => img
+                                .DrawImage( Red, new Point(14, 14), 1f )
+                                .DrawImage( Blue, new Point(55, 48), 1f ) 
+                            );
+                        }
+
+                        if ( i == 6 )
+                        {
+                            frame.Mutate( img => img
+                                .DrawImage( Red, new Point(12, 12), 1f )
+                                .DrawImage( Blue, new Point(57, 49), 1f ) 
+                            );
+                        }
+
+                        if ( i == 7 )
+                        {
+                            frame.Mutate( img => img
+                                .DrawImage( Red, new Point(10, 10), 1f )
+                                .DrawImage( Blue, new Point(60, 50), 1f ) 
+                            );
+                        }
+
+                        Gif.Frames.AddFrame(frame.Frames.RootFrame);
+                    }
+                }
+
+                Gif.Frames.RemoveFrame(0);
+
+                GifEncoder Encoder = new()
+                {
+                    ColorTableMode = GifColorTableMode.Local,
+                };
+
+                using Stream ImageStream = new MemoryStream();
+                await Gif.SaveAsGifAsync(ImageStream, Encoder);
+                ImageStream.Position = 0;
+
+                var msg = new DiscordMessageBuilder()
+                    .WithFile("pawg.gif", ImageStream)
+                    .WithReply(ctx.Message.Id);
+
+                await msg.SendAsync(ctx.Channel);
+                await ImageStream.DisposeAsync();
+                Gif.Dispose();
+                Red.Dispose();
+                Blue.Dispose();
+
+                return;
+            }
+            catch (System.Exception ex)
+            {
+                await ctx.RespondAsync( ex.Message + ex.StackTrace + "\n" + link );
+                return;
+            }
+
         }
     }
 }

@@ -6,6 +6,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus;
 using DiscordBot.Interactivity.Games;
+using SixLabors.Fonts;
 
 namespace DiscordBot.Commands
 {
@@ -45,29 +46,24 @@ namespace DiscordBot.Commands
                     {
                         var avatar = Image.Load(stream);
 
-                        var fontf = SixLabors.Fonts.SystemFonts.Find("ubuntu");
+                        var fontf = SixLabors.Fonts.SystemFonts.Get("ubuntu");
                         var font = new SixLabors.Fonts.Font(fontf, 32f, SixLabors.Fonts.FontStyle.Bold);
 
                         image.Mutate( x => x.DrawImage( avatar, new Point(240, 164), 1f ) );
                         avatar.Dispose();
 
-                        var options = new DrawingOptions() 
+                        TextOptions options = new TextOptions(font)
                         {
-                            TextOptions = new TextOptions()
-                            {
-                                VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Bottom,
-                                WrapTextWidth = image.Width,
-                                HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center,
-                            }
-
+                            VerticalAlignment = SixLabors.Fonts.VerticalAlignment.Bottom,
+                            WrappingLength = image.Width,
+                            HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment.Center,
                         };
 
                         image.Mutate( y => y.DrawText(
                             options,
                             String.Format("{0} é sus", member.DisplayName).ToUpper(), 
-                            font, 
-                            Color.White, 
-                            new PointF(0, 384f) ));
+                            Color.White
+                        ));
 
                     }
                 } 
